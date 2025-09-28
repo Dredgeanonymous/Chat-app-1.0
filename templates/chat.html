@@ -1,36 +1,50 @@
 <!doctype html>
-<html>
+<html lang="en" data-role="{{ role|e }}">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Chat</title>
-  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <meta name="theme-color" content="#111111">
 </head>
-<!-- data-role is used by chat.js to decide whether to show mod UI -->
-<body class="page" data-role="{{ role }}">
+<body data-role="{{ role|e }}">
   <header class="topbar">
-    <div>Logged in as <b>{{ username }}</b> ({{ role }})</div>
+    <div>Logged in as <strong>{{ username|e }}</strong> ({{ role|e }})</div>
     <a class="btn" href="{{ url_for('logout') }}">Logout</a>
   </header>
 
-  <main class="grid">
+  <main class="layout">
     <section class="panel">
       <h2>Online</h2>
-      <ul id="users" class="list"></ul>
+      <ul id="users" class="users"></ul>
     </section>
 
     <section class="panel">
-      <ul id="messages" class="list messages"></ul>
-      <form id="sendForm" class="row">
-        <input id="msgInput" placeholder="Type a message" autocomplete="off" />
+      <ul id="messages" class="messages"></ul>
+      <form id="sendForm" class="send">
+        <input id="msgInput" placeholder="Type a message" autocomplete="off">
         <button type="submit">Send</button>
       </form>
     </section>
   </main>
 
-  <!-- Use a known-good Socket.IO client -->
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
+  <!-- Socket.IO client (use CDN to ensure version compatibility on Render) -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+
+  <!-- Expose role to chat.js for the mod delete button -->
+  <script>
+    window.ROLE = document.body.dataset.role || 'user';
+  </script>
+
+  <!-- Your existing chat.js (unchanged) -->
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
+
+  <!-- Register service worker if present -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('{{ url_for("sw") }}').catch(()=>{});
+    }
+  </script>
 </body>
 </html>
