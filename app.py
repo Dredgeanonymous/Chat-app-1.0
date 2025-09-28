@@ -12,35 +12,26 @@ from flask_socketio import SocketIO, emit, disconnect
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
 
-# cookies play nice on https
-app.config.update(
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=True,
-)
+# On Render paid plan: force eventlet so WS works
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
-# WebSockets are available on the paid Render plan.
-# We keep async_mode="threading" (works fine on Render)
-# and let the server upgrade to WebSocket automatically.
-socketio = SocketIO(app, cors_allowed_origins="*")  # no async_mode here
-# ----------------------
-# Config
-# ----------------------
 MOD_CODE = os.environ.get("MOD_CODE", "12345")
 
 # ----------------------
-# In-memory state (demo only)
+# In-memory state
 # ----------------------
 online_by_sid = {}     # sid -> {"username": str, "role": "user"|"mod"}
-messages = []          # list of dicts
+messages = []          # simple message log
 
 def online_list():
     return [{"username": v["username"], "role": v["role"]} for v in online_by_sid.values()]
 
 def broadcast_online():
-    socketio.emit("online", online_list())
+    # include_self=True ensures the client that triggered gets it too
+    socketio.emit("online", online_list(), include_self=True)
 
 # ----------------------
-# Optional PWA files
+# PWA files (optional)
 # ----------------------
 @app.route("/manifest.webmanifest")
 def manifest():
@@ -51,7 +42,7 @@ def sw():
     return send_from_directory("static", "sw.js", mimetype="application/javascript")
 
 # ----------------------
-# API (used by chat.js to fetch roster once on load)
+# API endpoint for roster
 # ----------------------
 @app.route("/api/online")
 def api_online():
@@ -80,11 +71,7 @@ def login():
 def chat():
     if "username" not in session:
         return redirect(url_for("login"))
-    return render_template(
-        "chat.html",
-        username=session["username"],
-        role=session.get("role", "user"),
-    )
+    return render_template("chat.html", username=session["username"], role=session.get("role", "user"))
 
 @app.route("/logout")
 def logout():
@@ -96,24 +83,25 @@ def logout():
 # ----------------------
 @socketio.on("connect")
 def sio_connect():
-    # Require logged-in session
     username = session.get("username")
     role = session.get("role", "user")
     if not username:
         return False  # reject
 
-    # Track online
     online_by_sid[request.sid] = {"username": username, "role": role}
+    print(f"CONNECT {request.sid} -> {username} ({role})")  # shows in logs
 
-    # Send backlog only to this client (the names match your chat.js)
+    # send backlog only to this client
     emit("chat_history", messages)
 
-    # Update everyone’s online list
+    # update everyone
     broadcast_online()
 
 @socketio.on("disconnect")
 def sio_disconnect():
-    if online_by_sid.pop(request.sid, None) is not None:
+    user = online_by_sid.pop(request.sid, None)
+    if user:
+        print(f"DISCONNECT {request.sid} -> {user['username']}")
         broadcast_online()
 
 @socketio.on("send_message")
@@ -132,12 +120,10 @@ def sio_send_message(data):
         "ts": datetime.now(timezone.utc).isoformat(),
     }
     messages.append(entry)
-    # name matches chat.js listener
     socketio.emit("new_message", entry)
 
 @socketio.on("delete_message")
 def sio_delete_message(data):
-    # moderator-only
     if session.get("role") != "mod":
         return
     mid = (data or {}).get("id")
@@ -153,5 +139,4 @@ def sio_delete_message(data):
 # Entrypoint
 # ----------------------
 if __name__ == "__main__":
-    # For local runs. On Render we use Gunicorn via Procfile.
     socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
