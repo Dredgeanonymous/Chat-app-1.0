@@ -20,7 +20,7 @@ from flask_socketio import SocketIO
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="gevent",
+    async_mode="eventlet",
     logger=True,
     engineio_logger=True,
     message_queue=os.environ.get("REDIS_URL")
