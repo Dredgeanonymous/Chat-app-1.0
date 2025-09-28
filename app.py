@@ -1,7 +1,6 @@
-# ===== app.py =====
-# Must be first for eventlet-based servers:
+# ---- app.py (top of file) ----
 import eventlet
-eventlet.monkey_patch()
+eventlet.monkey_patch()   # MUST be first
 
 import os
 from datetime import datetime, timezone
@@ -11,6 +10,20 @@ from flask import (
 )
 from flask_socketio import SocketIO, emit, disconnect
 
+REDIS_URL = os.environ.get("REDIS_URL")
+
+app = Flask(__name__, static_folder="static", template_folder="templates")
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
+
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="eventlet",        # keep eventlet since Procfile uses it
+    logger=True,
+    engineio_logger=True,
+    message_queue=REDIS_URL,      # ok if None
+)
+# ---- rest of your file unchanged ----# ---- 
 # -------------------------------------------------
 # Flask + Socket.IO
 # -------------------------------------------------
