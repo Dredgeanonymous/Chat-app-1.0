@@ -1,8 +1,9 @@
 // Prefer WebSocket on paid Render, fall back to polling if needed
-const socket = io({
-  transports: ["websocket", "polling"],
-  upgrade: true,
-});
+// REMOVE this if present:
+// const socket = io({ transports: ["polling"], upgrade: false });
+
+// Use default:
+const socket = io();  // will use websocket on Render;
 
 // ---- DOM refs ----
 const usersEl    = document.getElementById("users");
