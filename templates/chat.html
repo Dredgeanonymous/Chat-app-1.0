@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+>
+  <!-- PWA + icons -->
+<link rel="manifest" href="/static/manifest.webmanifest">
+<meta name="theme-color" content="#121212">
+
+<link rel="icon" href="/static/icons/icon-192.png" sizes="192x192">
+<link rel="icon" href="/static/icons/icon-512.png" sizes="512x512">
+
+<!-- iOS icons / settings -->
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Chat</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div>Logged in as <strong>{{ username }}</strong>
+      {% if role == 'mod' %}<span class="badge">MOD</span>{% endif %}
+      ({{ role }})
+    </div>
+    <a class="btn" href="{{ url_for('logout') }}">Logout</a>
+  </header>
+
+  <main class="grid">
+    <section class="panel">
+      <h3>Online</h3>
+      <ul id="users"></ul>
+    </section>
+
+    <section class="panel">
+      <ul id="messages" class="messages"></ul>
+
+      <form id="sendForm" class="sendbar" autocomplete="off">
+        <input id="msgInput" placeholder="Type a message" />
+        <button class="btn primary" type="submit">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <!-- make role available to JS -->
+  <script>
+    window.USERNAME = {{ username|tojson }};
+    window.ROLE = {{ role|tojson }};
+  </script>
+
+  <!-- Your local copy of socket.io client (or CDN if you prefer) -->
+  <script src="{{ url_for('static', filename='socket.io.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+  <script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/static/sw.js').catch(console.error);
+    });
+  }
+</script>
+  }
+</script>
+</body>
+</html>

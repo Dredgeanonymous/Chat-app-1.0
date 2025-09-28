@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<meta name="theme-color" content="#2563eb">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <main class="login">
+    <form method="post" class="card">
+      <h2>Enter a username</h2>
+      {% if error %}<p class="error">{{ error }}</p>{% endif %}
+      <input name="username" placeholder="Username" required autofocus />
+      <input name="mod_code" placeholder="Moderator code (optional)" />
+      <button class="btn full">Join</button>
+    </form>
+  </main>
+  <script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/static/sw.js').catch(console.error);
+    });
+  }
+</script>
+  }
+</script>
+</body>
+</html>
