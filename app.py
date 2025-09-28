@@ -1,5 +1,5 @@
-import eventlet
-eventlet.monkey_patch()  # MUST be first
+import gevent
+gevent.monkey_patch()  # MUST be first
 
 import os
 from datetime import datetime, timezone
@@ -11,7 +11,7 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="eventlet",      # using eventlet (matches your Procfile)
+    async_mode="gevent",      # using eventlet (matches your Procfile)
     logger=True,
     engineio_logger=True,
     message_queue=os.environ.get("REDIS_URL")  # OK if None
