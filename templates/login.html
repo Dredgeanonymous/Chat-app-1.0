@@ -1,23 +1,26 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Login</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="manifest" href="{{ url_for('manifest') }}">
 </head>
-<body class="page">
+<body class="login">
   <div class="card">
-    <h1>Login</h1>
-    {% if error %}<p class="error">{{ error }}</p>{% endif %}
-    <form method="post">
+    <h1>Join Chat</h1>
+    {% if error %}
+      <div class="alert">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="{{ url_for('login') }}">
       <label>Username</label>
-      <input name="username" placeholder="Your name" required />
+      <input name="username" autocomplete="nickname" required>
 
-      <label>Moderator code (optional)</label>
-      <input name="mod_code" placeholder="Enter mod access code" />
+      <label>Moderator code <small>(optional)</small></label>
+      <input name="mod_code" placeholder="Enter mod code if you have one">
 
-      <button type="submit">Enter chat</button>
+      <button type="submit">Enter</button>
     </form>
   </div>
 </body>
