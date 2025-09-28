@@ -1,19 +1,26 @@
-import gevent
-gevent.monkey_patch()  # MUST be first
+# ---- app.py (top of file) ----
+from gevent import monkey
+monkey.patch_all()  # MUST be first
 
 import os
 from datetime import datetime, timezone
-from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, jsonify
+from flask import (
+    Flask, render_template, request, redirect,
+    url_for, session, send_from_directory, jsonify
+)
 from flask_socketio import SocketIO, emit, disconnect
-from flask_socketio import SocketIO, emit, disconnect
+
+app = Flask(__name__, static_folder="static", template_folder="templates")
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
 
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="gevent",      # <-- switch from "eventlet" to "gevent"
+    async_mode="gevent",              # match your Procfile (gevent worker)
     logger=True,
     engineio_logger=True,
-    message_queue=os.environ.get("REDIS_URL")  # ok if None
+    message_queue=os.environ.get("REDIS_URL")  # OK if None
+)
 )
 
 MOD_CODE = os.environ.get("MOD_CODE", "12345")
