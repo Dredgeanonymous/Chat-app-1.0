@@ -18,18 +18,16 @@ function renderMessage(m) {
 
   // Add delete button if moderator
 if (window.ROLE === "mod") {
-  // show delete button
-} {
-    const del = document.createElement("button");
-    del.textContent = "✖";
-    del.title = "Delete";
-    del.className = "mini danger";
-    del.addEventListener("click", () => {
-      socket.emit("delete_message", { id: m.id });
-    });
-    li.appendChild(document.createTextNode(" "));
-    li.appendChild(del);
-  }
+  const del = document.createElement("button");
+  del.textContent = "✖";
+  del.title = "Delete";
+  del.className = "mini danger";
+  del.addEventListener("click", () => {
+    socket.emit("delete_message", { id: m.id });
+  });
+  li.appendChild(document.createTextNode(" "));
+  li.appendChild(del);
+}
 
   list.appendChild(li);
 }
