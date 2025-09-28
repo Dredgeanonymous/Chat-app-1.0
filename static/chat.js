@@ -1,97 +1,87 @@
-// Prefer WebSocket on paid Render, fall back to polling if needed
-// REMOVE this if present:
-// const socket = io({ transports: ["polling"], upgrade: false });
+// static/chat.js
 
-// Use default:// Force WebSocket transport (paid plan supports this)
-const socket = io({ transports: ['websocket'] });
+// ---- Socket connection ----
+const socket = io({
+  transports: ["websocket"],
+  upgrade: false,
+});
 
+// ---- DOM refs (make sure these IDs exist in your HTML) ----
+const form      = document.getElementById("chat-form");   // <form id="chat-form">
+const msgInput  = document.getElementById("msg");         // <input id="msg">
+const list      = document.getElementById("messages");    // <ul id="messages">
+const onlineBox = document.getElementById("online");      // <ul id="online"> (optional)
 
-// ---- DOM refs ----
-const usersEl    = document.getElementById("users");
-const messagesEl = document.getElementById("messages");
-const sendForm   = document.getElementById("sendForm");
-const msgInput   = document.getElementById("msgInput");
-
-// ---- tiny helper ----
-function el(tag, attrs = {}, ...children) {
-  const e = document.createElement(tag);
-  Object.entries(attrs).forEach(([k, v]) => {
-    if (k === "class") e.className = v;
-    else if (k === "dataset") Object.assign(e.dataset, v);
-    else if (k.startsWith("on") && typeof v === "function") e.addEventListener(k.slice(2), v);
-    else e.setAttribute(k, v);
-  });
-  children.flat().forEach(c => e.appendChild(typeof c === "string" ? document.createTextNode(c) : c));
-  return e;
-}
-
-// ---- renderers ----
-function renderUsers(list) {
-  usersEl.innerHTML = "";
-  if (!list || !list.length) {
-    usersEl.appendChild(el("li", { class: "muted" }, "Nobody online yet"));
-    return;
-  }
-  list.forEach(u => {
-    usersEl.appendChild(
-      el("li", { class: "user" },
-        el("span", { class: "name" }, u.username),
-        u.role === "mod" ? el("span", { class: "badge small" }, "MOD") : ""
-      )
-    );
-  });
-}
-
+// ---- helpers ----
 function renderMessage(m) {
-  const row = el("li", { id: `m-${m.id}`, class: "message" },
-    el("div", { class: "msg-head" },
-      el("span", { class: "who" }, `${m.username}${m.role === "mod" ? " (mod)" : ""}`),
-      el("span", { class: "when" }, new Date(m.ts).toLocaleTimeString())
-    ),
-    el("div", { class: "msg-text" }, m.text)
-  );
+  // m is expected to look like: { id, text, username?, ts? }
+  const li = document.createElement("li");
+  li.dataset.id = m.id;
 
-  // add delete button if logged-in role is mod
-  if (window.ROLE === "mod") {
-    const delBtn = el("button", { class: "mini danger", onclick: () => {
-      socket.emit("delete_message", { id: m.id });
-    }}, "✖");
-    row.querySelector(".msg-head").appendChild(delBtn);
-  }
+  const who = m.username || "Anon";
+  li.textContent = `${who}: ${m.text}`;
 
-  messagesEl.appendChild(row);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+  // delete button (if you allow it)
+  const del = document.createElement("button");
+  del.textContent = "✖";
+  del.title = "Delete";
+  del.className = "mini danger";
+  del.addEventListener("click", () => {
+    socket.emit("delete_message", { id: m.id });
+  });
+
+  li.appendChild(document.createTextNode(" "));
+  li.appendChild(del);
+  list.appendChild(li);
 }
 
-// ---- socket events ----
+function removeMessageById(id) {
+  const li = list.querySelector(`li[data-id="${id}"]`);
+  if (li) li.remove();
+}
+
+// ---- incoming events from server ----
+
+// Full history pushed on connect
 socket.on("chat_history", (history) => {
-  messagesEl.innerHTML = "";
+  list.innerHTML = "";
   (history || []).forEach(renderMessage);
 });
 
-socket.on("new_message", (m) => renderMessage(m));
+// New single message broadcast
+socket.on("new_message", (m) => {
+  renderMessage(m);
+});
 
+// Message deleted broadcast
 socket.on("message_deleted", ({ id }) => {
-  const li = document.getElementById(`m-${id}`);
-  if (li) li.remove();
+  removeMessageById(id);
 });
 
-socket.on("online", renderUsers);
-socket.on("online_users", renderUsers);
-socket.on("roster", renderUsers);
+// Online roster (optional, your server emits "online")
+socket.on("online", (roster) => {
+  if (!onlineBox) return;
+  onlineBox.innerHTML = "";
+  (roster || []).forEach((name) => {
+    const li = document.createElement("li");
+    li.textContent = name;
+    onlineBox.appendChild(li);
+  });
+});
 
-// fetch once on load in case any socket event is missed
-fetch("/api/online").then(r => r.ok ? r.json() : []).then(renderUsers).catch(() => {});
-
-// ---- outgoing ----
-sendForm.addEventListener("submit", (e) => {
+// ---- submit handler (this is the part you asked about) ----
+form.addEventListener("submit", (e) => {
   e.preventDefault();
-  const text = msgInput.value.trim();
+  const text = (msgInput.value || "").trim();
   if (!text) return;
+
+  // Send to server; server will broadcast "new_message" to everyone
   socket.emit("send_message", { text });
+
   msgInput.value = "";
+  msgInput.focus();
 });
 
-// debug logs (optional)
-socket.on("connect_error", (e) => console.log("connect_error:", e.message));
-socket.on("reconnect_error", (e) => console.log("reconnect_error:", e.message));
+// (optional) debug
+socket.on("connect", () => console.log("connected:", socket.id));
+socket.on("disconnect", () => console.log("disconnected"));
