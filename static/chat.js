@@ -1,16 +1,18 @@
-// Connect using polling so it works with the eventlet setup on Android
+// static/chat.js
+
+// Force polling so it works on Render free tier (no websocket upgrade)
 const socket = io({
   transports: ["polling"],
   upgrade: false,
 });
 
-// DOM refs
-const usersEl = document.getElementById("users");
+// ---- DOM refs ----
+const usersEl    = document.getElementById("users");
 const messagesEl = document.getElementById("messages");
-const sendForm = document.getElementById("sendForm");
-const msgInput = document.getElementById("msgInput");
+const sendForm   = document.getElementById("sendForm");
+const msgInput   = document.getElementById("msgInput");
 
-// ---- helpers ----
+// ---- tiny helper ----
 function el(tag, attrs = {}, ...children) {
   const e = document.createElement(tag);
   Object.entries(attrs).forEach(([k, v]) => {
@@ -23,8 +25,13 @@ function el(tag, attrs = {}, ...children) {
   return e;
 }
 
+// ---- renderers ----
 function renderUsers(list) {
   usersEl.innerHTML = "";
+  if (!list || !list.length) {
+    usersEl.appendChild(el("li", { class: "muted" }, "Nobody online yet"));
+    return;
+  }
   list.forEach(u => {
     const isMod = u.role === "mod";
     usersEl.appendChild(
@@ -37,12 +44,11 @@ function renderUsers(list) {
 }
 
 function renderMessage(m) {
-  // <li> [time] user: text [X] (X only visible to mods)
   const li = el("li", { id: `m-${m.id}`, class: "message" });
 
   const header = el("div", { class: "row" },
-    el("span", { class: "meta" }, new Date(m.ts).toLocaleTimeString()),
-    el("span", { class: "user" }, m.username),
+    el("span", { class: "when" }, new Date(m.ts).toLocaleTimeString()),
+    el("span", { class: "who"  }, `${m.username}${m.role === "mod" ? " (mod)" : ""}`)
   );
 
   const text = el("div", { class: "text" }, m.text);
@@ -50,13 +56,14 @@ function renderMessage(m) {
   li.appendChild(header);
   li.appendChild(text);
 
-  if (window.ROLE === "mod") {
-    const del = el(
+  // show delete button only for moderators
+  if (document.body.dataset.role === "mod") {
+    const delBtn = el(
       "button",
       { class: "mini danger", onclick: () => deleteMsg(m.id), title: "Delete message" },
       "✖"
     );
-    li.appendChild(del);
+    li.querySelector(".row").appendChild(delBtn);
   }
 
   messagesEl.appendChild(li);
@@ -64,63 +71,40 @@ function renderMessage(m) {
 }
 
 function deleteMsg(id) {
-  // moderator-only endpoint
-  socket.emit("delete_message", { id });
+  // server expects: event 'mod_action' with { action:'delete', message_id: id }
+  socket.emit("mod_action", { action: "delete", message_id: id });
 }
 
-// ---- events from server ----
+// ---- socket events from server ----
 
-// on first join the server may send the backlog
-socket.on("chat_history", (history) => {
+// initial backlog (server emits "history")
+socket.on("history", (history) => {
   messagesEl.innerHTML = "";
-  history.forEach(renderMessage);
+  (history || []).forEach(renderMessage);
 });
 
-// when any new message arrives
-socket.on("new_message", (m) => {
-  renderMessage(m);
-});
+// new message
+socket.on("new_message", (m) => renderMessage(m));
 
-// when a message was deleted by a mod
+// message deleted
 socket.on("message_deleted", ({ id }) => {
   const li = document.getElementById(`m-${id}`);
   if (li) li.remove();
 });
 
-// live user list
-socket.on("user_list", (users) => {
-  renderUsers(users);
-});
-// ---- socket event listeners ----
-
-// Listen for roster updates under multiple possible names
+// live user roster (support a few names just in case)
 socket.on("online", renderUsers);
 socket.on("online_users", renderUsers);
 socket.on("roster", renderUsers);
 
-// On page load, fetch current online list once in case events were missed
-fetch("/api/online")
-  .then(r => r.json())
-  .then(list => renderUsers(list))
-  .catch(() => {});// ---- socket event listeners ----
+// also fetch once on load (ok if 404; we ignore errors)
+fetch("/api/online").then(r => r.ok ? r.json() : []).then(renderUsers).catch(() => {});
 
-// Listen for roster updates under multiple possible names
-socket.on("online", renderUsers);
-socket.on("online_users", renderUsers);
-socket.on("roster", renderUsers);
-
-// On page load, fetch current online list once in case events were missed
-fetch("/api/online")
-  .then(r => r.json())
-  .then(list => renderUsers(list))
-  .catch(() => {});
 // ---- outgoing ----
-
-// send message
 sendForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const text = msgInput.value.trim();
   if (!text) return;
   socket.emit("send_message", { text });
   msgInput.value = "";
-});
+}
