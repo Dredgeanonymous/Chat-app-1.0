@@ -1,8 +1,8 @@
 // static/chat.js
 
 const socket = io({
-  transports: ["websocket"],
-  upgrade: false,
+  transports: ["websocket", "polling"],   // allow both
+  upgrade: true
 });
 socket.on("connect", () => console.log("Socket connected", socket.id));
 socket.on("connect_error", (e) => console.error("connect_error", e));
