@@ -21,14 +21,7 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
 # e.g. redis://:password@host:6379/0
 REDIS_URL = os.environ.get("REDIS_URL")
 
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode="eventlet",
-    logger=True,
-    engineio_logger=True,
-    message_queue=REDIS_URL,  # Enables cross-worker broadcasts if provided
-)
+socketio = SocketIO(app, async_mode="gevent", ...)
 
 MOD_CODE = os.environ.get("MOD_CODE", "12345")
 
