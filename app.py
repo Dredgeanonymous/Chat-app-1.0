@@ -135,7 +135,7 @@ def sio_send_message(data):
         "ts": datetime.now(timezone.utc).isoformat(),
     }
     messages.append(entry)
-    socketio.emit("new_message", entry)  # broadcast to all (includes sender)
+    socketio.emit("new_message", entry, broadcast=True)  # broadcast to all (includes sender)
 
 @socketio.on("delete_message")
 def sio_delete_message(data):
