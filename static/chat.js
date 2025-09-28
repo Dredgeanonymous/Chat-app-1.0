@@ -1,9 +1,7 @@
-// static/chat.js
-
-// Force polling so it works on Render free tier (no websocket upgrade)
+// Prefer WebSocket (paid Render supports it), fall back to polling if needed
 const socket = io({
-  transports: ["polling"],
-  upgrade: false,
+  transports: ["websocket", "polling"],
+  upgrade: true,
 });
 
 // ---- DOM refs ----
@@ -33,72 +31,58 @@ function renderUsers(list) {
     return;
   }
   list.forEach(u => {
-    const isMod = u.role === "mod";
     usersEl.appendChild(
       el("li", { class: "user" },
         el("span", { class: "name" }, u.username),
-        isMod ? el("span", { class: "badge small" }, "MOD") : ""
+        u.role === "mod" ? el("span", { class: "badge small" }, "MOD") : ""
       )
     );
   });
 }
 
 function renderMessage(m) {
-  const li = el("li", { id: `m-${m.id}`, class: "message" });
-
-  const header = el("div", { class: "row" },
-    el("span", { class: "when" }, new Date(m.ts).toLocaleTimeString()),
-    el("span", { class: "who"  }, `${m.username}${m.role === "mod" ? " (mod)" : ""}`)
+  const row = el("li", { id: `m-${m.id}`, class: "message" },
+    el("div", { class: "msg-head" },
+      el("span", { class: "who" }, `${m.username}${m.role === "mod" ? " (mod)" : ""}`),
+      el("span", { class: "when" }, new Date(m.ts).toLocaleTimeString())
+    ),
+    el("div", { class: "msg-text" }, m.text)
   );
 
-  const text = el("div", { class: "text" }, m.text);
-
-  li.appendChild(header);
-  li.appendChild(text);
-
-  // show delete button only for moderators
+  // show delete button for mods
   if (document.body.dataset.role === "mod") {
-    const delBtn = el(
-      "button",
-      { class: "mini danger", onclick: () => deleteMsg(m.id), title: "Delete message" },
-      "✖"
-    );
-    li.querySelector(".row").appendChild(delBtn);
+    const delBtn = el("button", { class: "mini danger", onclick: () => {
+      socket.emit("mod_action", { action: "delete", message_id: m.id });
+    }}, "✖");
+    row.querySelector(".msg-head").appendChild(delBtn);
   }
 
-  messagesEl.appendChild(li);
+  messagesEl.appendChild(row);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-function deleteMsg(id) {
-  // server expects: event 'mod_action' with { action:'delete', message_id: id }
-  socket.emit("mod_action", { action: "delete", message_id: id });
-}
-
 // ---- socket events from server ----
-
-// initial backlog (server emits "history")
 socket.on("history", (history) => {
   messagesEl.innerHTML = "";
   (history || []).forEach(renderMessage);
 });
-
-// new message
 socket.on("new_message", (m) => renderMessage(m));
-
-// message deleted
 socket.on("message_deleted", ({ id }) => {
   const li = document.getElementById(`m-${id}`);
   if (li) li.remove();
 });
 
-// live user roster (support a few names just in case)
+// support several event names for roster
 socket.on("online", renderUsers);
 socket.on("online_users", renderUsers);
 socket.on("roster", renderUsers);
 
-// also fetch once on load (ok if 404; we ignore errors)
+// also fetch once on load (covers missed early event)
 fetch("/api/online").then(r => r.ok ? r.json() : []).then(renderUsers).catch(() => {});
+
+// optional: quick diagnostic logs
+socket.on("connect_error", (e) => console.log("connect_error:", e && e.message));
+socket.on("reconnect_error", (e) => console.log("reconnect_error:", e && e.message));
 
 // ---- outgoing ----
 sendForm.addEventListener("submit", (e) => {
@@ -106,5 +90,7 @@ sendForm.addEventListener("submit", (e) => {
   const text = msgInput.value.trim();
   if (!text) return;
   socket.emit("send_message", { text });
+  msgInput.value = "";
+});  socket.emit("send_message", { text });
   msgInput.value = "";
 }
