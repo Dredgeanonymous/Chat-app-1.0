@@ -2,8 +2,11 @@
 // REMOVE this if present:
 // const socket = io({ transports: ["polling"], upgrade: false });
 
-// Use default:
-const socket = io();  // will use websocket on Render;
+// Use default:// Force WebSocket transport (paid plan supports this)
+const socket = io({
+  transports: ["websocket"],
+  upgrade: false
+});
 
 // ---- DOM refs ----
 const usersEl    = document.getElementById("users");
