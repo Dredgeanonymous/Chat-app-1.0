@@ -43,7 +43,12 @@ def online_list():
 def push_online(include_self=True):
     roster = online_list()
     # Send roster to everyone (optionally include triggering client)
-    socketio.emit("online", roster, broadcast=True, include_self=include_self)
+socketio.emit(
+    "online",
+    roster,
+    to=None,              # send to everyone
+    skip_sid=None if include_self else request.sid
+)
 from flask import request, session
 
 @socketio.on("connect")
