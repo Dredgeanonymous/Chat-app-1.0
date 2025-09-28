@@ -21,8 +21,7 @@ app.config.update(
 # WebSockets are available on the paid Render plan.
 # We keep async_mode="threading" (works fine on Render)
 # and let the server upgrade to WebSocket automatically.
-socketio = SocketIO(app, async_mode="threading", cors_allowed_origins="*")
-
+socketio = SocketIO(app, cors_allowed_origins="*")  # no async_mode here
 # ----------------------
 # Config
 # ----------------------
