@@ -1,15 +1,10 @@
-# ---- app.py (top of file) ----
 import eventlet
 eventlet.monkey_patch()  # MUST be first
 
 import os
 from datetime import datetime, timezone
-from flask import (
-    Flask, render_template, request, redirect,
-    url_for, session, send_from_directory, jsonify
-)
+from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, jsonify
 from flask_socketio import SocketIO, emit, disconnect
-
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
 
