@@ -1,4 +1,4 @@
-// Prefer WebSocket (paid Render supports it), fall back to polling if needed
+// Prefer WebSocket on paid Render, fall back to polling if needed
 const socket = io({
   transports: ["websocket", "polling"],
   upgrade: true,
@@ -49,10 +49,10 @@ function renderMessage(m) {
     el("div", { class: "msg-text" }, m.text)
   );
 
-  // show delete button for mods
-  if (document.body.dataset.role === "mod") {
+  // add delete button if logged-in role is mod
+  if (window.ROLE === "mod") {
     const delBtn = el("button", { class: "mini danger", onclick: () => {
-      socket.emit("mod_action", { action: "delete", message_id: m.id });
+      socket.emit("delete_message", { id: m.id });
     }}, "✖");
     row.querySelector(".msg-head").appendChild(delBtn);
   }
@@ -61,28 +61,25 @@ function renderMessage(m) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-// ---- socket events from server ----
-socket.on("history", (history) => {
+// ---- socket events ----
+socket.on("chat_history", (history) => {
   messagesEl.innerHTML = "";
   (history || []).forEach(renderMessage);
 });
+
 socket.on("new_message", (m) => renderMessage(m));
+
 socket.on("message_deleted", ({ id }) => {
   const li = document.getElementById(`m-${id}`);
   if (li) li.remove();
 });
 
-// support several event names for roster
 socket.on("online", renderUsers);
 socket.on("online_users", renderUsers);
 socket.on("roster", renderUsers);
 
-// also fetch once on load (covers missed early event)
+// fetch once on load in case any socket event is missed
 fetch("/api/online").then(r => r.ok ? r.json() : []).then(renderUsers).catch(() => {});
-
-// optional: quick diagnostic logs
-socket.on("connect_error", (e) => console.log("connect_error:", e && e.message));
-socket.on("reconnect_error", (e) => console.log("reconnect_error:", e && e.message));
 
 // ---- outgoing ----
 sendForm.addEventListener("submit", (e) => {
@@ -91,6 +88,8 @@ sendForm.addEventListener("submit", (e) => {
   if (!text) return;
   socket.emit("send_message", { text });
   msgInput.value = "";
-});  socket.emit("send_message", { text });
-  msgInput.value = "";
-}
+});
+
+// debug logs (optional)
+socket.on("connect_error", (e) => console.log("connect_error:", e.message));
+socket.on("reconnect_error", (e) => console.log("reconnect_error:", e.message));
