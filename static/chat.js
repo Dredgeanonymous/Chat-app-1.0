@@ -91,7 +91,29 @@ socket.on("message_deleted", ({ id }) => {
 socket.on("user_list", (users) => {
   renderUsers(users);
 });
+// ---- socket event listeners ----
 
+// Listen for roster updates under multiple possible names
+socket.on("online", renderUsers);
+socket.on("online_users", renderUsers);
+socket.on("roster", renderUsers);
+
+// On page load, fetch current online list once in case events were missed
+fetch("/api/online")
+  .then(r => r.json())
+  .then(list => renderUsers(list))
+  .catch(() => {});// ---- socket event listeners ----
+
+// Listen for roster updates under multiple possible names
+socket.on("online", renderUsers);
+socket.on("online_users", renderUsers);
+socket.on("roster", renderUsers);
+
+// On page load, fetch current online list once in case events were missed
+fetch("/api/online")
+  .then(r => r.json())
+  .then(list => renderUsers(list))
+  .catch(() => {});
 // ---- outgoing ----
 
 // send message
