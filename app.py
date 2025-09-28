@@ -21,7 +21,7 @@ socketio = SocketIO(
     engineio_logger=True,
     message_queue=os.environ.get("REDIS_URL")  # OK if None
 )
-)
+
 
 MOD_CODE = os.environ.get("MOD_CODE", "12345")
 # -------------------------------------------------
