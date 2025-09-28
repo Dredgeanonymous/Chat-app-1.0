@@ -1,6 +1,6 @@
 # ---- app.py (top of file) ----
 import eventlet
-eventlet.monkey_patch()   # MUST be first
+eventlet.monkey_patch()  # MUST be first
 
 import os
 from datetime import datetime, timezone
@@ -10,42 +10,19 @@ from flask import (
 )
 from flask_socketio import SocketIO, emit, disconnect
 
-REDIS_URL = os.environ.get("REDIS_URL")
-
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
-
-from flask_socketio import SocketIO
 
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="eventlet",
+    async_mode="eventlet",      # using eventlet (matches your Procfile)
     logger=True,
     engineio_logger=True,
-    message_queue=os.environ.get("REDIS_URL")
-)
-# -------------------------------------------------
-# Flask + Socket.IO
-# -------------------------------------------------
-app = Flask(__name__, static_folder="static", template_folder="templates")
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
-
-# If you're deploying with multiple workers (Gunicorn, etc.), set REDIS_URL
-# e.g. redis://:password@host:6379/0
-REDIS_URL = os.environ.get("REDIS_URL")
-
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode="eventlet",   # or "gevent" if you switched
-    logger=True,
-    engineio_logger=True,
-    message_queue=os.environ.get("REDIS_URL")
+    message_queue=os.environ.get("REDIS_URL")  # OK if None
 )
 
 MOD_CODE = os.environ.get("MOD_CODE", "12345")
-
 # -------------------------------------------------
 # In-memory state (demo)
 # -------------------------------------------------
