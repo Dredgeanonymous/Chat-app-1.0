@@ -3,10 +3,8 @@
 // const socket = io({ transports: ["polling"], upgrade: false });
 
 // Use default:// Force WebSocket transport (paid plan supports this)
-const socket = io({
-  transports: ["websocket"],
-  upgrade: false
-});
+const socket = io({ transports: ['websocket'] });
+
 
 // ---- DOM refs ----
 const usersEl    = document.getElementById("users");
