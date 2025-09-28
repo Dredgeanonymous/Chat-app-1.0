@@ -15,15 +15,16 @@ REDIS_URL = os.environ.get("REDIS_URL")
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
 
+from flask_socketio import SocketIO
+
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="eventlet",        # keep eventlet since Procfile uses it
+    async_mode="gevent",
     logger=True,
     engineio_logger=True,
-    message_queue=REDIS_URL,      # ok if None
+    message_queue=os.environ.get("REDIS_URL")
 )
-# ---- rest of your file unchanged ----# ---- 
 # -------------------------------------------------
 # Flask + Socket.IO
 # -------------------------------------------------
