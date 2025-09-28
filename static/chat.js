@@ -53,9 +53,9 @@ socket.on("message_deleted", ({ id }) => {
 
 socket.on("online", (roster) => {
   usersBox.innerHTML = "";
-  (roster || []).forEach((name) => {
+  (roster || []).forEach((user) => {
     const li = document.createElement("li");
-    li.textContent = name;
+    li.textContent = user.role === "mod" ? `${user.username} (mod)` : user.username;
     usersBox.appendChild(li);
   });
 });
