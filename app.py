@@ -1,3 +1,8 @@
+# ===== app.py =====
+# Must be first for eventlet-based servers:
+import eventlet
+eventlet.monkey_patch()
+
 import os
 from datetime import datetime, timezone
 from flask import (
@@ -7,17 +12,23 @@ from flask import (
 from flask_socketio import SocketIO, emit, disconnect
 
 # -------------------------------------------------
-# Flask + Socket.IO (Render Starter: WebSocket via eventlet)
+# Flask + Socket.IO
 # -------------------------------------------------
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
 
-# Helpful diagnostics: enable Engine.IO/Socket.IO logs on the server
-# before
-# socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+# If you're deploying with multiple workers (Gunicorn, etc.), set REDIS_URL
+# e.g. redis://:password@host:6379/0
+REDIS_URL = os.environ.get("REDIS_URL")
 
-# after
-socketio = SocketIO(app, cors_allowed_origins="*")  # async_mode auto
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="eventlet",
+    logger=True,
+    engineio_logger=True,
+    message_queue=REDIS_URL,  # Enables cross-worker broadcasts if provided
+)
 
 MOD_CODE = os.environ.get("MOD_CODE", "12345")
 
@@ -34,12 +45,13 @@ def online_list():
     seen = {}
     for info in online_by_sid.values():
         seen[info["username"]] = info["role"]
+    # return list of dicts like {"username": u, "role": r}
     return [{"username": u, "role": r} for u, r in sorted(seen.items())]
 
 def push_online(include_self=True):
     roster = online_list()
-    # send to all clients (include the one that triggered it)
-    socketio.emit("online", roster, include_self=include_self)
+    # Send roster to everyone (optionally include triggering client)
+    socketio.emit("online", roster, broadcast=True, include_self=include_self)
 
 # -------------------------------------------------
 # Health & debug helpers
@@ -52,7 +64,7 @@ def healthz():
 def api_online():
     return jsonify(online_list())
 
-# PWA passthroughs (safe if files exist)
+# PWA passthroughs
 @app.route("/manifest.webmanifest")
 def manifest():
     return send_from_directory("static", "manifest.webmanifest", mimetype="application/manifest+json")
@@ -105,11 +117,10 @@ def sio_connect():
     online_by_sid[request.sid] = {"username": username, "role": role}
     print(f"[CONNECT] {request.sid} -> {username} ({role})")
 
-    # Send backlog and roster to THIS client immediately
+    # Send backlog to THIS client
     emit("chat_history", messages)
-    emit("online", online_list())
 
-    # Then broadcast roster to everyone (including this client)
+    # Broadcast roster to everyone (including this client, once)
     push_online(include_self=True)
 
 @socketio.on("disconnect")
@@ -117,14 +128,15 @@ def sio_disconnect():
     info = online_by_sid.pop(request.sid, None)
     if info:
         print(f"[DISCONNECT] {request.sid} -> {info['username']}")
-    push_online(include_self=True)
+    # Broadcast updated roster (including remaining clients only; sender is gone)
+    push_online(include_self=False)
 
 @socketio.on("send_message")
 def sio_send_message(data):
     if "username" not in session:
         disconnect()
         return
-    text = (data or {}).get("text", "").strip()
+    text = (data or {}).get("text", "").trim() if hasattr(str, "trim") else (data or {}).get("text", "").strip()
     if not text:
         return
     entry = {
@@ -135,7 +147,8 @@ def sio_send_message(data):
         "ts": datetime.now(timezone.utc).isoformat(),
     }
     messages.append(entry)
-    socketio.emit("new_message", entry, broadcast=True)  # broadcast to all (includes sender)
+    # Explicit broadcast so ALL clients (cross-worker if Redis is set) get it
+    socketio.emit("new_message", entry, broadcast=True)
 
 @socketio.on("delete_message")
 def sio_delete_message(data):
@@ -148,10 +161,13 @@ def sio_delete_message(data):
     if idx is None:
         return
     removed = messages.pop(idx)
-    socketio.emit("message_deleted", {"id": removed["id"]})
+    socketio.emit("message_deleted", {"id": removed["id"]}, broadcast=True)
 
 # -------------------------------------------------
-# Entrypoint (local dev). On Render, Gunicorn starts it.
+# Entrypoint (local dev)
 # -------------------------------------------------
 if __name__ == "__main__":
+    # For local dev this is fine. In production use Gunicorn:
+    #   gunicorn -k eventlet -w 1 app:app
+    # If you set REDIS_URL, you may scale workers above 1.
     socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
