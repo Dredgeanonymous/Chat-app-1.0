@@ -13,13 +13,11 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
 
 # Helpful diagnostics: enable Engine.IO/Socket.IO logs on the server
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode="eventlet",
-    logger=True,
-    engineio_logger=True,
-)
+# before
+# socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+
+# after
+socketio = SocketIO(app, cors_allowed_origins="*")  # async_mode auto
 
 MOD_CODE = os.environ.get("MOD_CODE", "12345")
 
