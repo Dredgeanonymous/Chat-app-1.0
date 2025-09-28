@@ -49,7 +49,7 @@ socketio.emit(
     to=None,              # send to everyone
     skip_sid=None if include_self else request.sid
 )
-from flask import request, session
+
 
 @socketio.on("connect")
 def sio_connect(auth=None):   # <— make auth optional
