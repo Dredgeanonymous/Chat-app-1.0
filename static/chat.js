@@ -17,7 +17,9 @@ function renderMessage(m) {
   li.textContent = `${who}: ${m.text}`;
 
   // Add delete button if moderator
-  if (window.ROLE === "admin" || window.ROLE === "mod") {
+if (window.ROLE === "mod") {
+  // show delete button
+} {
     const del = document.createElement("button");
     del.textContent = "✖";
     del.title = "Delete";
