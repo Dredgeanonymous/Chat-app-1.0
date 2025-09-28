@@ -44,6 +44,39 @@ def push_online(include_self=True):
     roster = online_list()
     # Send roster to everyone (optionally include triggering client)
     socketio.emit("online", roster, broadcast=True, include_self=include_self)
+from flask import request, session
+
+@socketio.on("connect")
+def sio_connect(auth):   # FIXED: accepts auth
+    username = session.get("username", "Anon")
+    role = session.get("role", "user")
+    online_by_sid[request.sid] = {"username": username, "role": role}
+
+    # update roster for everyone
+    push_online(include_self=True)
+
+    # send chat history just to this new client
+    socketio.emit("chat_history", messages, to=request.sid)
+
+
+@socketio.on("disconnect")
+def sio_disconnect():    # disconnect takes NO args
+    online_by_sid.pop(request.sid, None)
+    push_online(include_self=False)
+
+
+@socketio.on("send_message")
+def sio_send_message(data):
+    text = (data or {}).get("text", "").strip()
+    if not text:
+        return
+    msg = {
+        "id": str(int(datetime.now().timestamp() * 1000)),
+        "username": session.get("username", "Anon"),
+        "text": text,
+    }
+    messages.append(msg)
+    socketio.emit("message", msg, broadcast=True)
 
 # -------------------------------------------------
 # Health & debug helpers
@@ -98,8 +131,8 @@ def logout():
 # -------------------------------------------------
 # Socket.IO events
 # -------------------------------------------------
-@socketio.on("connect")
-def sio_connect():
+
+
     username = session.get("username")
     role = session.get("role", "user")
     if not username:
@@ -115,16 +148,14 @@ def sio_connect():
     # Broadcast roster to everyone (including this client, once)
     push_online(include_self=True)
 
-@socketio.on("disconnect")
-def sio_disconnect():
+
     info = online_by_sid.pop(request.sid, None)
     if info:
         print(f"[DISCONNECT] {request.sid} -> {info['username']}")
     # Broadcast updated roster (including remaining clients only; sender is gone)
     push_online(include_self=False)
 
-@socketio.on("send_message")
-def sio_send_message(data):
+
     if "username" not in session:
         disconnect()
         return
