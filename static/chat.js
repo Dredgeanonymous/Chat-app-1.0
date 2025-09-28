@@ -4,6 +4,9 @@ const socket = io({
   transports: ["websocket"],
   upgrade: false,
 });
+socket.on("connect", () => console.log("Socket connected", socket.id));
+socket.on("connect_error", (e) => console.error("connect_error", e));
+socket.on("disconnect", (r) => console.warn("disconnected", r));
 
 // ---- DOM refs (match your chat.html) ----
 const form     = document.getElementById("sendForm");   // form id="sendForm"
