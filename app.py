@@ -6,33 +6,55 @@ from flask import (
 )
 from flask_socketio import SocketIO, emit, disconnect
 
-# ----------------------
-# Flask + Socket.IO
-# ----------------------
+# -------------------------------------------------
+# Flask + Socket.IO (Render Starter: WebSocket via eventlet)
+# -------------------------------------------------
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
 
-# On Render paid plan: force eventlet so WS works
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+# Helpful diagnostics: enable Engine.IO/Socket.IO logs on the server
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="eventlet",
+    logger=True,
+    engineio_logger=True,
+)
 
 MOD_CODE = os.environ.get("MOD_CODE", "12345")
 
-# ----------------------
-# In-memory state
-# ----------------------
-online_by_sid = {}     # sid -> {"username": str, "role": "user"|"mod"}
-messages = []          # simple message log
+# -------------------------------------------------
+# In-memory state (demo)
+# -------------------------------------------------
+# sid -> {"username": str, "role": "user"|"mod"}
+online_by_sid = {}
+# simple message log (resets on redeploy)
+messages = []
 
 def online_list():
-    return [{"username": v["username"], "role": v["role"]} for v in online_by_sid.values()]
+    # Unique list; if same user opens multiple tabs, show once
+    seen = {}
+    for info in online_by_sid.values():
+        seen[info["username"]] = info["role"]
+    return [{"username": u, "role": r} for u, r in sorted(seen.items())]
 
-def broadcast_online():
-    # include_self=True ensures the client that triggered gets it too
-    socketio.emit("online", online_list(), include_self=True)
+def push_online(include_self=True):
+    roster = online_list()
+    # send to all clients (include the one that triggered it)
+    socketio.emit("online", roster, include_self=include_self)
 
-# ----------------------
-# PWA files (optional)
-# ----------------------
+# -------------------------------------------------
+# Health & debug helpers
+# -------------------------------------------------
+@app.route("/healthz")
+def healthz():
+    return "ok", 200
+
+@app.route("/api/online")
+def api_online():
+    return jsonify(online_list())
+
+# PWA passthroughs (safe if files exist)
 @app.route("/manifest.webmanifest")
 def manifest():
     return send_from_directory("static", "manifest.webmanifest", mimetype="application/manifest+json")
@@ -41,16 +63,9 @@ def manifest():
 def sw():
     return send_from_directory("static", "sw.js", mimetype="application/javascript")
 
-# ----------------------
-# API endpoint for roster
-# ----------------------
-@app.route("/api/online")
-def api_online():
-    return jsonify(online_list())
-
-# ----------------------
+# -------------------------------------------------
 # Pages
-# ----------------------
+# -------------------------------------------------
 @app.route("/", methods=["GET"])
 def root():
     return redirect(url_for("login"))
@@ -78,31 +93,33 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-# ----------------------
+# -------------------------------------------------
 # Socket.IO events
-# ----------------------
+# -------------------------------------------------
 @socketio.on("connect")
 def sio_connect():
     username = session.get("username")
     role = session.get("role", "user")
     if not username:
-        return False  # reject
+        # no Flask session -> reject socket
+        return False
 
     online_by_sid[request.sid] = {"username": username, "role": role}
-    print(f"CONNECT {request.sid} -> {username} ({role})")  # shows in logs
+    print(f"[CONNECT] {request.sid} -> {username} ({role})")
 
-    # send backlog only to this client
+    # Send backlog and roster to THIS client immediately
     emit("chat_history", messages)
+    emit("online", online_list())
 
-    # update everyone
-    broadcast_online()
+    # Then broadcast roster to everyone (including this client)
+    push_online(include_self=True)
 
 @socketio.on("disconnect")
 def sio_disconnect():
-    user = online_by_sid.pop(request.sid, None)
-    if user:
-        print(f"DISCONNECT {request.sid} -> {user['username']}")
-        broadcast_online()
+    info = online_by_sid.pop(request.sid, None)
+    if info:
+        print(f"[DISCONNECT] {request.sid} -> {info['username']}")
+    push_online(include_self=True)
 
 @socketio.on("send_message")
 def sio_send_message(data):
@@ -120,7 +137,7 @@ def sio_send_message(data):
         "ts": datetime.now(timezone.utc).isoformat(),
     }
     messages.append(entry)
-    socketio.emit("new_message", entry)
+    socketio.emit("new_message", entry)  # broadcast to all (includes sender)
 
 @socketio.on("delete_message")
 def sio_delete_message(data):
@@ -135,8 +152,8 @@ def sio_delete_message(data):
     removed = messages.pop(idx)
     socketio.emit("message_deleted", {"id": removed["id"]})
 
-# ----------------------
-# Entrypoint
-# ----------------------
+# -------------------------------------------------
+# Entrypoint (local dev). On Render, Gunicorn starts it.
+# -------------------------------------------------
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
