@@ -42,14 +42,13 @@ def online_list():
 
 def push_online(include_self=True):
     roster = online_list()
-    # Send roster to everyone (optionally include triggering client)
-socketio.emit(
-    "online",
-    roster,
-    to=None,              # send to everyone
-    skip_sid=None if include_self else request.sid
-)
-
+    # Send roster to everyone (optionally exclude the triggering client)
+    socketio.emit(
+        "online",
+        roster,
+        to=None,  # everyone
+        skip_sid=None if include_self else request.sid
+    )
 
 @socketio.on("connect")
 def sio_connect(auth=None):   # <— make auth optional
