@@ -47,7 +47,7 @@ def push_online(include_self=True):
 from flask import request, session
 
 @socketio.on("connect")
-def sio_connect(auth):   # FIXED: accepts auth
+def sio_connect(auth=None):   # <— make auth optional
     username = session.get("username", "Anon")
     role = session.get("role", "user")
     online_by_sid[request.sid] = {"username": username, "role": role}
