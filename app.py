@@ -127,7 +127,7 @@ def sio_send_message(data):
     if "username" not in session:
         disconnect()
         return
-    text = (data or {}).get("text", "").trim() if hasattr(str, "trim") else (data or {}).get("text", "").strip()
+    text = (data or {}).get("text", "").strip()
     if not text:
         return
     entry = {
