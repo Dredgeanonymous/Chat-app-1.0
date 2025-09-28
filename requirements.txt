@@ -2,7 +2,7 @@ Flask==3.0.3
 Flask-SocketIO==5.4.1
 python-socketio==5.11.3
 python-engineio==4.9.1
-eventlet==0.37.0a1
+eventlet==0.36.1
 redis==5.0.4
 gunicorn==22.0.0
 setuptools>=65.5.0
