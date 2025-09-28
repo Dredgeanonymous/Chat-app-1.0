@@ -1,6 +1,9 @@
 // static/chat.js
 
-const socket = io();
+const socket = io({
+  transports: ["websocket"],
+  upgrade: false,
+});
 
 // ---- DOM refs (match your chat.html) ----
 const form     = document.getElementById("sendForm");   // form id="sendForm"
