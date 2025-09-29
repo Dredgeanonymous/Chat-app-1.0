@@ -1,106 +1,161 @@
-<!doctype html>
-<html lang="en" data-role="{{ role|e }}">
-<head>
-<!-- Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous"/>
+// static/chat.js
 
-<!-- in <head> or before chat.js -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js" crossorigin="anonymous"></script>
+// -------------------- socket --------------------
+const socket = io();
+socket.on("connect", () => console.log("Socket connected", socket.id));
+socket.on("connect_error", (e) => console.error("connect_error", e));
+socket.on("disconnect", (r) => console.warn("disconnected", r));
 
-<!-- ... later, before </body> ... -->
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
-<script>window.ROLE = document.body.dataset.role || 'user';</script>
-<script src="{{ url_for('static', filename='chat.js') }}"></script>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chat</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="manifest" href="{{ url_for('manifest') }}">
-  <meta name="theme-color" content="#111111">
-</head>
-<body data-role="{{ role|e }}">
-  <header class="topbar">
-    <div>Logged in as <strong>{{ username|e }}</strong> ({{ role|e }})</div>
-    <a class="btn" href="{{ url_for('logout') }}">Logout</a>
-  </header>
+// -------------------- DOM --------------------
+const form     = document.getElementById("sendForm");
+const msgInput = document.getElementById("msgInput");
+const list     = document.getElementById("messages");
+const usersBox = document.getElementById("users");
 
-  <main class="layout">
-    <section class="panel">
-      <h2>Online</h2>
-      <ul id="users" class="users"></ul>
-    </section>
+// If any critical node is missing, stop cleanly (no crashes)
+if (!form || !msgInput || !list || !usersBox) {
+  console.error("Missing required DOM nodes; check chat.html IDs.");
+}
 
-    <section class="panel">
-      <ul id="messages" class="messages"></ul>
-      <form id="sendForm" class="send">
-        <input id="msgInput" placeholder="Type a message" autocomplete="off">
-        <button type="submit">Send</button>
-      </form>
-    </section>
-  </main>
+// -------------------- DM helpers --------------------
+let pmTo = null;
 
-  <!-- Socket.IO client (use CDN to ensure version compatibility on Render) -->
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+function startPM(username){
+  pmTo = username;
+  msgInput.placeholder = `DM to ${username}…`;
+  msgInput.focus();
+}
 
-  <!-- Expose role to chat.js for the mod delete button -->
-  <script>
-    window.ROLE = document.body.dataset.role || 'user';
-  </script>
+// Parse "/w username message"
+function parseWhisper(s){
+  const m = s.match(/^\/w\s+(\S+)\s+([\s\S]+)/i);
+  return m ? { to: m[1], text: m[2] } : null;
+}
 
-  <!-- Your existing chat.js (unchanged) -->
-  <script src="{{ url_for('static', filename='chat.js') }}"></script>
-
-  <!-- Register service worker if present -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('{{ url_for("sw") }}').catch(()=>{});
-    }
-  </script>
-
-  <!-- Age Gate -->
-<div id="age-gate" style="position:fixed;inset:0;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;">
-  <div style="max-width:520px;text-align:center;padding:24px;">
-    <h2>Adults Only (18+)</h2>
-    <p>This site may display adult advertising. By entering, you confirm you are 18+ and consent to cookies.</p>
-    <button id="enterBtn">Enter</button>
-  </div>
-</div>
-<script>
-(function(){
-  const COOKIE = "age_ok";
-  // make the cookie work on both apex and www
-  const ROOT_DOMAIN = location.hostname.replace(/^www\./,'');
-  const COOKIE_DOMAIN = "." + ROOT_DOMAIN;
-
-  const gate = document.getElementById("age-gate");
-  const enter = document.getElementById("enterBtn");
-
-  function hasCookie(){
-    return document.cookie.split(";").some(c => c.trim().startsWith(COOKIE + "="));
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape"){
+    pmTo = null;
+    msgInput.placeholder = "Type a message";
   }
-  function setCookie(days=30){
-    const maxAge = 60*60*24*days;
-    document.cookie = `${COOKIE}=1; Max-Age=${maxAge}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
-  }
+});
 
-  // show by default; hide only if cookie is present
-  if (hasCookie()){
-    gate.style.display = "none";
-    document.body.classList.remove("agelock");
+// -------------------- Emoji (safe init) --------------------
+try {
+  const emojiBtn = document.createElement("button");
+  emojiBtn.type = "button";
+  emojiBtn.className = "emoji-btn";
+  emojiBtn.title = "Insert emoji";
+  emojiBtn.textContent = "😊";
+  form && form.prepend(emojiBtn);
+
+  if (window.EmojiButton) {
+    const picker = new EmojiButton({ position: "top-start", autoHide: true });
+    emojiBtn.addEventListener("click", () => picker.togglePicker(emojiBtn));
+    picker.on("emoji", (emoji) => {
+      msgInput.value += emoji;
+      msgInput.focus();
+    });
   } else {
-    gate.style.display = "flex";
-    document.body.classList.add("agelock");
-    gate.style.zIndex = "99999"; // make sure it's on top
+    // graceful fallback
+    emojiBtn.addEventListener("click", () => {
+      msgInput.value += " 🙂";
+      msgInput.focus();
+    });
+    console.warn("EmojiButton library not found; using fallback.");
+  }
+} catch (err) {
+  console.error("Emoji init failed:", err);
+}
+
+// -------------------- UI helpers --------------------
+function genderIcon(g){
+  switch(g){
+    case "male":      return '<i class="fa-solid fa-mars"></i>';
+    case "female":    return '<i class="fa-solid fa-venus"></i>';
+    case "nonbinary": return '<i class="fa-solid fa-genderless"></i>';
+    case "trans":     return '<i class="fa-solid fa-transgender"></i>';
+    case "other":     return '<i class="fa-regular fa-circle-question"></i>';
+    default:          return "";
+  }
+}
+
+function renderUsers(roster){
+  usersBox.innerHTML = "";
+  (roster || []).forEach(u=>{
+    const li = document.createElement("li");
+    li.dataset.user = u.username;
+    li.innerHTML = `<strong>${u.username}</strong>
+      ${u.role === "mod" ? '<span class="badge-mod">MOD</span>' : ""}
+      <span class="g">${genderIcon(u.gender)} ${u.gender || ""}</span>`;
+    li.addEventListener("click", ()=> startPM(u.username)); // quick DM
+    usersBox.appendChild(li);
+  });
+}
+
+function renderMessage(m){
+  const li = document.createElement("li");
+  li.dataset.id = m.id;
+  const who = m.username || "Anon";
+  const g   = m.gender ? `<span class="g">${genderIcon(m.gender)}</span>` : "";
+  li.innerHTML = `<strong>${who}</strong> ${g}: ${m.text}`;
+
+  // add delete button if moderator
+  if (window.ROLE === "mod") {
+    const del = document.createElement("button");
+    del.textContent = "✖";
+    del.title = "Delete";
+    del.className = "mini danger";
+    del.addEventListener("click", () => socket.emit("delete_message", { id: m.id }));
+    li.appendChild(document.createTextNode(" "));
+    li.appendChild(del);
   }
 
-  enter.addEventListener("click", () => {
-    setCookie(30);
-    gate.style.display = "none";
-    document.body.classList.remove("agelock");
-  });
-})();
-</script>
+  list.appendChild(li);
+  list.scrollTop = list.scrollHeight;
+}
 
-</body>
-</html>
+// -------------------- submit --------------------
+form && form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const txt = (msgInput.value || "").trim();
+  if (!txt) return;
+
+  // 1) "/w user msg"
+  const w = parseWhisper(txt);
+  if (w) {
+    socket.emit("pm", w);
+  // 2) Active DM target
+  } else if (pmTo) {
+    socket.emit("pm", { to: pmTo, text: txt });
+  // 3) Public message — emit BOTH names to cover server variants
+  } else {
+    socket.emit("chat", { text: txt });
+    socket.emit("send_message", { text: txt });
+  }
+
+  msgInput.value = "";
+  msgInput.placeholder = pmTo ? `DM to ${pmTo}…` : "Type a message";
+});
+
+// -------------------- listeners --------------------
+// roster
+socket.on("online", renderUsers);
+
+// history
+socket.on("chat_history", (arr) => {
+  list.innerHTML = "";
+  (arr || []).forEach(renderMessage);
+});
+
+// public message (support both)
+socket.on("chat", renderMessage);
+socket.on("message", renderMessage);
+
+// private
+socket.on("pm", (m) => {
+  const li = document.createElement("li");
+  li.className = "msg pm";
+  li.textContent = `(DM) ${m.from} → ${m.to}: ${m.text}`;
+  list.appendChild(li);
+  list.scrollTop = list.scrollHeight;
+});
