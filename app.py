@@ -112,7 +112,10 @@ def root():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = (request.form.get("username") or "").strip()
+        username = request.form.get("username","Anon").strip()[:24]
+gender = request.form.get("gender","hidden")
+session["username"] = username
+session["gender"] = gender
         mod_try  = (request.form.get("mod_code") or "").strip()
         if not username:
             return render_template("login.html", error="Please enter a username.")
@@ -133,12 +136,12 @@ def logout():
     return redirect(url_for("login"))
 
 # -------------------------------------------------
-# Socket.IO events
-# -------------------------------------------------
 
 
-    username = session.get("username")
-    role = session.get("role", "user")
+    username = session.get("username","Anon")
+role = session.get("role","user")
+gender = session.get("gender","hidden")
+online_by_sid[request.sid] = {"username": username, "role": role, "gender": gender}
     if not username:
         # no Flask session -> reject socket
         return False
