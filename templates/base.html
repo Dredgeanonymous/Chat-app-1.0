@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Hot Singles Chat{% endblock %}</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <meta name="theme-color" content="#111111">
+
+  <!-- Icons -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        crossorigin="anonymous"/>
+</head>
+<body class="site">
+  <header class="site-header">
+    <a href="{{ url_for('landing') }}" class="brand">
+      <!-- Replace with your SVG/logo -->
+      <span class="logo-dot"></span>
+      <strong>HotSinglesChat</strong>
+    </a>
+
+    <nav class="nav">
+      <a href="{{ url_for('landing') }}">Home</a>
+      <a href="{{ url_for('privacy') }}">Privacy</a>
+      <a href="{{ url_for('terms') }}">Terms</a>
+      <a href="{{ url_for('cookies') }}">Cookies</a>
+      <a class="btn primary" href="{{ url_for('login') }}">Enter Chat</a>
+    </nav>
+  </header>
+
+  {% block content %}{% endblock %}
+
+  <footer class="site-footer">
+    <p>© {{  now().year if now else '' }} HotSinglesChat •
+       <a href="{{ url_for('privacy') }}">Privacy</a> •
+       <a href="{{ url_for('terms') }}">Terms</a> •
+       <a href="{{ url_for('cookies') }}">Cookies</a>
+    </p>
+  </footer>
+
+  <!-- Cookie banner -->
+  <div id="cookie-banner" class="cookie-banner" hidden>
+    <div class="cookie-inner">
+      <p>We use cookies to keep you logged in and improve the experience.
+         Read our <a href="{{ url_for('cookies') }}">Cookie Policy</a>.
+      </p>
+      <button id="cookie-accept" class="btn primary">Accept</button>
+    </div>
+  </div>
+
+  <script>
+    // Very small cookie consent
+    (function () {
+      const KEY = "cookie_ok=1";
+      if (!document.cookie.includes("cookie_ok=")) {
+        document.getElementById("cookie-banner").hidden = false;
+        document.getElementById("cookie-accept").onclick = () => {
+          document.cookie = KEY + "; Max-Age=" + (60*60*24*365) + "; path=/; SameSite=Lax";
+          document.getElementById("cookie-banner").hidden = true;
+        };
+      }
+    })();
+  </script>
+</body>
+</html>
