@@ -110,7 +110,21 @@ def manifest():
     # Make sure static/manifest.webmanifest exists if you keep this
     return send_from_directory("static", "manifest.webmanifest",
                                mimetype="application/manifest+json")
+@app.route("/landing")
+def landing():
+    return render_template("landing.html")
 
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+@app.route("/cookies")
+def cookies():
+    return render_template("cookies.html")
 
 
 # ---------- Socket.IO events ----------
