@@ -1,14 +1,23 @@
 <!doctype html>
 <html lang="en" data-role="{{ role|e }}">
 <head>
-<head>
-<meta name="juicyads-site-verification" content="3a2230dfb5fd4e823902e42403b11f9a
-     
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264"
-     crossorigin="anonymous"></script>
-  
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264"
-     crossorigin="anonymous"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chat</title>
+
+  <!-- Site verification (FIXED) -->
+  <meta name="juicyads-site-verification" content="3a2230dfb5fd4e823902e42403b11f9a">
+
+  <!-- Theme / manifest / styles -->
+  <meta name="theme-color" content="#111111">
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Optional: lock body when gate shown -->
+  <style>
+    .agelock { overflow: hidden; }
+  </style>
+
   <!-- Font Awesome -->
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
@@ -18,19 +27,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js"
           crossorigin="anonymous"></script>
 
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chat</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="manifest" href="{{ url_for('manifest') }}">
-  <meta name="theme-color" content="#111111">
+  <!-- Google AdSense (load once) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264"
+          crossorigin="anonymous"></script>
 </head>
-<!-- JuicyAds v3.0 -->
-<script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-<ins id="1102384" data-width="133" data-height="139"></ins>
-<script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1102384});</script>
-<!--JuicyAds END-->
-</head>
+
 <body data-role="{{ role|e }}">
   <header class="topbar">
     <div>Logged in as <strong>{{ username|e }}</strong> ({{ role|e }})</div>
@@ -51,12 +52,25 @@
       </form>
     </section>
   </main>
-<!-- JuicyAds v3.0 -->
-<script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-<ins id="1102385" data-width="474" data-height="190"></ins>
-<script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1102385});</script>
-<!--JuicyAds END-->
-  <!-- Socket.IO client (use CDN to ensure version compatibility on Render) -->
+
+  <!-- JuicyAds v3.0 (IN BODY) -->
+  <script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
+  <ins id="1102384" data-width="133" data-height="139"></ins>
+  <script type="text/javascript" data-cfasync="false" async>
+    (adsbyjuicy = window.adsbyjuicy || []).push({ adzone: 1102384 });
+  </script>
+
+  <ins id="1102385" data-width="474" data-height="190"></ins>
+  <script type="text/javascript" data-cfasync="false" async>
+    (adsbyjuicy = window.adsbyjuicy || []).push({ adzone: 1102385 });
+  </script>
+  <!-- JuicyAds END -->
+
+  <!-- Infolinks -->
+  <script type="text/javascript">var infolinks_pid = 3440424; var infolinks_wsid = 0;</script>
+  <script type="text/javascript" src="//resources.infolinks.com/js/infolinks_main.js"></script>
+
+  <!-- Socket.IO client -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
 
   <!-- Expose role to chat.js for the mod delete button -->
@@ -64,84 +78,15 @@
     window.ROLE = document.body.dataset.role || 'user';
   </script>
 
-  <!-- Your existing chat.js (unchanged) -->
+  <!-- Your chat.js -->
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
 
-  <!-- Register service worker if present -->
+  <!-- Service worker -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('{{ url_for("sw") }}').catch(()=>{});
     }
   </script>
 
-     <!-- Age Gate -->
-<div id="age-gate" style="position:fixed;inset:0;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;z-index:99999;">
-  <div style="max-width:520px;text-align:center;padding:24px;">
-    <h2>Adults Only (18+)</h2>
-    <p>This site may display adult advertising. By entering, you confirm you are 18+ and consent to cookies.</p>
-    <button id="enterBtn" type="button" style="padding:.6rem 1rem;border-radius:.5rem;background:#2563eb;color:#fff;border:0;">Enter</button>
-  </div>
-</div>
-
-<script data-cfasync="false">
-document.addEventListener('DOMContentLoaded', function () {
-  const KEY = 'age_ok';
-  const gate = document.getElementById('age-gate');
-  const btn  = document.getElementById('enterBtn');
-
-  function hasConsent() {
-    const inStorage = localStorage.getItem(KEY) === '1';
-    const inCookie  = document.cookie.split(';').some(c => c.trim().startsWith(KEY + '='));
-    return inStorage || inCookie;
-  }
-
-  function setCookieBothWays(days = 30) {
-    const maxAge = 60*60*24*days;
-
-    // 1) host-only cookie (always works on the exact host)
-    document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
-
-    // 2) try a parent-domain cookie (so apex and www share it)
-    const host = location.hostname;
-    const parts = host.split('.');
-    if (parts.length >= 2) {
-      const root = '.' + parts.slice(-2).join('.'); // e.g. .hotsingleschat.org
-      document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; Domain=${root}; SameSite=Lax`;
-    }
-
-    // also keep a localStorage flag as a fallback
-    try { localStorage.setItem(KEY, '1'); } catch(_) {}
-  }
-
-  // If consent exists, hide immediately
-  if (hasConsent()) {
-    if (gate) gate.style.display = 'none';
-    document.body.classList.remove('agelock');
-    return;
-  }
-
-  // Otherwise, show the overlay
-  if (gate) {
-    gate.style.display = 'flex';
-    document.body.classList.add('agelock');
-  }
-
-  // Wire up the Accept button
-  btn?.addEventListener('click', () => {
-    setCookieBothWays(30);
-    if (gate) gate.style.display = 'none';
-    document.body.classList.remove('agelock');
-
-    // If something still covers the page (rare caching/Rocket Loader cases),
-    // force a one-time reload.
-    if (!hasConsent()) {
-      setTimeout(() => location.reload(), 50);
-    }
-  });
-});
-</script>
-
-
-     <script type="text/javascript"> var infolinks_pid = 3440424; var infolinks_wsid = 0; </script> <script type="text/javascript" src="//resources.infolinks.com/js/infolinks_main.js"></script>
-</body>
-  </html>
+  <!-- Age Gate -->
+  <div id="age-gate" style="position:fixed;inset:0;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;z-index:999
