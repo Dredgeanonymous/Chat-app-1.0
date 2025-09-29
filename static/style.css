@@ -1,3 +1,14 @@
+:root{
+  --bg:#0e1320; --panel:#151a2b; --accent:#4f8cff; --accent-2:#ff3d71; --text:#e9eefb; --muted:#9fb0d0;
+}
+body{ background:var(--bg); color:var(--text); }
+.topbar{ background:var(--panel); border-bottom:1px solid #253055; }
+.panel{ background:var(--panel); border:1px solid #1d2544; }
+.btn, button{ background:var(--accent); color:#fff; border:none; border-radius:8px; padding:.55rem .8rem; }
+.users li .g{ color:var(--muted); margin-left:.4rem; }
+.msg.pm{ background:#10172b; border-left:4px solid var(--accent-2); }
+.emoji-btn{ margin-right:.4rem; background:#2a335a; }
+.badge-mod{ background:var(--accent-2); color:#fff; padding:.1rem .4rem; border-radius:6px; font-size:.75rem; margin-left:.35rem; }
 /* put in your <style> near the gate, or your CSS file */
 body.agelock { overflow: hidden; }
 :root { color-scheme: dark; --bg:#121212; --panel:#1e1e1e; --bar:#0e0e0e; --text:#eee; --muted:#aaa; --accent:#4d77ff; }
