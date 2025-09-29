@@ -74,51 +74,73 @@
     }
   </script>
 
-  <!-- Age Gate -->
-<div id="age-gate" style="position:fixed;inset:0;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;">
+     <!-- Age Gate -->
+<div id="age-gate" style="position:fixed;inset:0;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;z-index:99999;">
   <div style="max-width:520px;text-align:center;padding:24px;">
     <h2>Adults Only (18+)</h2>
     <p>This site may display adult advertising. By entering, you confirm you are 18+ and consent to cookies.</p>
-    <button id="enterBtn">Enter</button>
+    <button id="enterBtn" type="button" style="padding:.6rem 1rem;border-radius:.5rem;background:#2563eb;color:#fff;border:0;">Enter</button>
   </div>
 </div>
-<script>
-(function(){
-  const COOKIE = "age_ok";
-  // make the cookie work on both apex and www
-  const ROOT_DOMAIN = location.hostname.replace(/^www\./,'');
-  const COOKIE_DOMAIN = "." + ROOT_DOMAIN;
 
-  const gate = document.getElementById("age-gate");
-  const enter = document.getElementById("enterBtn");
+<script data-cfasync="false">
+document.addEventListener('DOMContentLoaded', function () {
+  const KEY = 'age_ok';
+  const gate = document.getElementById('age-gate');
+  const btn  = document.getElementById('enterBtn');
 
-  function hasCookie(){
-    return document.cookie.split(";").some(c => c.trim().startsWith(COOKIE + "="));
+  function hasConsent() {
+    const inStorage = localStorage.getItem(KEY) === '1';
+    const inCookie  = document.cookie.split(';').some(c => c.trim().startsWith(KEY + '='));
+    return inStorage || inCookie;
   }
-  function setCookie(days=30){
+
+  function setCookieBothWays(days = 30) {
     const maxAge = 60*60*24*days;
-    document.cookie = `${COOKIE}=1; Max-Age=${maxAge}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
+
+    // 1) host-only cookie (always works on the exact host)
+    document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
+
+    // 2) try a parent-domain cookie (so apex and www share it)
+    const host = location.hostname;
+    const parts = host.split('.');
+    if (parts.length >= 2) {
+      const root = '.' + parts.slice(-2).join('.'); // e.g. .hotsingleschat.org
+      document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; Domain=${root}; SameSite=Lax`;
+    }
+
+    // also keep a localStorage flag as a fallback
+    try { localStorage.setItem(KEY, '1'); } catch(_) {}
   }
 
-  // show by default; hide only if cookie is present
-  if (hasCookie()){
-    gate.style.display = "none";
-    document.body.classList.remove("agelock");
-  } else {
-    gate.style.display = "flex";
-    document.body.classList.add("agelock");
-    gate.style.zIndex = "99999"; // make sure it's on top
+  // If consent exists, hide immediately
+  if (hasConsent()) {
+    if (gate) gate.style.display = 'none';
+    document.body.classList.remove('agelock');
+    return;
   }
-{% include "_cookie_banner.html" %}
-</body>
-</html>
-  enter.addEventListener("click", () => {
-    setCookie(30);
-    gate.style.display = "none";
-    document.body.classList.remove("agelock");
+
+  // Otherwise, show the overlay
+  if (gate) {
+    gate.style.display = 'flex';
+    document.body.classList.add('agelock');
+  }
+
+  // Wire up the Accept button
+  btn?.addEventListener('click', () => {
+    setCookieBothWays(30);
+    if (gate) gate.style.display = 'none';
+    document.body.classList.remove('agelock');
+
+    // If something still covers the page (rare caching/Rocket Loader cases),
+    // force a one-time reload.
+    if (!hasConsent()) {
+      setTimeout(() => location.reload(), 50);
+    }
   });
-})();
+});
 </script>
+
 
      <script type="text/javascript"> var infolinks_pid = 3440424; var infolinks_wsid = 0; </script> <script type="text/javascript" src="//resources.infolinks.com/js/infolinks_main.js"></script>
 </body>
