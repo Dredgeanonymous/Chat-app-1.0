@@ -13,6 +13,38 @@
     {% if error %}
       <div class="alert">{{ error }}</div>
     {% endif %}
+    <body>
+
+  <!-- Add branding + description above the form -->
+  <div style="text-align:center; color:white; padding:20px;">
+    <h1 style="font-size:2em; margin-bottom:10px;">HotSinglesChat</h1>
+    <p style="font-size:1.1em; max-width:500px; margin:0 auto 20px;">
+      Meet, connect, and chat live with singles near you and around the world. 
+      Welcome to <b>HotSinglesChat</b> — the place where real people come 
+      together for fun conversations, flirty connections, and maybe even more. 
+      Choose your username below and start chatting instantly!
+    </p>
+  </div>
+
+  <!-- Your original form -->
+  <form id="joinForm">
+    <label>Username</label>
+    <input type="text" name="username">
+
+    <label>Moderator code (optional)</label>
+    <input type="text" name="modcode">
+
+    <label>Gender</label>
+    <select name="gender">
+      <option>Female</option>
+      <option>Male</option>
+      <option>Other</option>
+    </select>
+
+    <button type="submit">Enter</button>
+  </form>
+
+</body>
     <form method="post" action="{{ url_for('login') }}">
   <label>Username</label>
   <input name="username" autocomplete="nickname" required>
