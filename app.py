@@ -66,7 +66,7 @@ def inject_now():
 @app.route("/")
 def root():
     # Land on login page by default
-    return redirect(url_for("login"))
+    return redirect(url_for("landing"))
 
 @app.route("/landing")
 def landing():
