@@ -1,50 +1,63 @@
+# app.py  — Flask + Flask-SocketIO (gevent/gunicorn friendly)
+
 import os
-from pathlib import Path
-from app import app, TEMPLATES_DIR
-print("Template folder:", app.template_folder)
-print("Exists:", Path(app.template_folder).exists())
-print("Contains:", [p.name for p in Path(app.template_folder).iterdir()])
-PY
 from datetime import datetime
+from pathlib import Path
+
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, send_from_directory
+    url_for, session
 )
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
 from markupsafe import escape
 
-# ---------- Config ----------
-app = Flask(__name__, static_folder="static", template_folder="templates")
+# ---------- Paths (robust no matter the working dir) ----------
+BASE_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = BASE_DIR / "templates"
+STATIC_DIR = BASE_DIR / "static"
+
+# ---------- App / Socket.IO ----------
+app = Flask(
+    __name__,
+    static_folder=str(STATIC_DIR),
+    template_folder=str(TEMPLATES_DIR),
+)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+# If you scale to >1 instance, add a message_queue (e.g., Redis URL)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Simple moderator gate (change this!)
+# ---------- Simple moderator gate ----------
 MOD_CODE = os.environ.get("MOD_CODE", "letmein")
 
 # ---------- In-memory state (demo only) ----------
-messages = []  # [{id, user, text, ts}]
-online_by_sid = {}  # sid -> {"username": str, "role": "user"|"mod"}
-sid_by_username = {}  # username -> sid
+messages = []          # [{id, user, text, ts}]
+online_by_sid = {}     # sid -> {"username": str, "role": "user"|"mod"}
+sid_by_username = {}   # username -> sid
+
 
 def current_user():
     uname = session.get("username")
     role = session.get("role", "user")
     return uname, role
 
+
 def next_msg_id():
     return f"m{len(messages)+1:06d}"
+
 
 # ---------- Routes ----------
 @app.route("/")
 def root():
-    # Send users to login first
     return redirect(url_for("login"))
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         username = (request.form.get("username") or "").strip()
         mod_code = (request.form.get("mod_code") or "").strip()
+        # gender is present in the form; capture if you want to store it
+        gender = (request.form.get("gender") or "").strip()
 
         if not username:
             return render_template("login.html", error="Username is required.")
@@ -52,9 +65,11 @@ def login():
         role = "mod" if mod_code and mod_code == MOD_CODE else "user"
         session["username"] = username
         session["role"] = role
+        session["gender"] = gender
         return redirect(url_for("chat"))
 
     return render_template("login.html", error=None)
+
 
 @app.route("/chat")
 def chat():
@@ -63,21 +78,12 @@ def chat():
         return redirect(url_for("login"))
     return render_template("chat.html", username=uname, role=role)
 
+
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
-@app.route("/manifest")
-def manifest():
-    # Make sure this file exists at: static/manifest.webmanifest
-    return send_from_directory("static", "manifest.webmanifest",
-                               mimetype="application/manifest+json")
 
-@app.route("/sw")
-def sw():
-    # Make sure this file exists at: static/sw.js
-    return send_from_directory("static", "sw.js",
-                               mimetype="application/javascript")
 
 # ---------- Socket.IO events ----------
 @socketio.on("connect")
@@ -85,18 +91,18 @@ def sio_connect():
     uname = session.get("username")
     role = session.get("role", "user")
     if not uname:
-        # Not logged in -> refuse socket
         disconnect()
         return
 
     online_by_sid[request.sid] = {"username": uname, "role": role}
     sid_by_username[uname] = request.sid
 
-    # Send initial state to this client
-    emit("chat_history", messages[-100:])  # last 100 msgs
+    # Send recent history to this client
+    emit("chat_history", messages[-100:])
 
-    # Broadcast updated online list
+    # Broadcast updated roster (just usernames; JS handles both shapes)
     emit("online", sorted(sid_by_username.keys()), broadcast=True)
+
 
 @socketio.on("disconnect")
 def sio_disconnect():
@@ -106,13 +112,12 @@ def sio_disconnect():
         sid_by_username.pop(uname, None)
         emit("online", sorted(sid_by_username.keys()), broadcast=True)
 
+
 @socketio.on("chat")
 def sio_chat(data):
-    """Public chat message"""
     uname = session.get("username")
     if not uname:
         return
-
     txt = (data or {}).get("text", "").strip()
     if not txt:
         return
@@ -126,9 +131,9 @@ def sio_chat(data):
     messages.append(msg)
     emit("chat", msg, broadcast=True)
 
+
 @socketio.on("pm")
 def sio_pm(data):
-    """Private message: {to: username, text: str}"""
     uname = session.get("username")
     if not uname:
         return
@@ -148,13 +153,12 @@ def sio_pm(data):
         "text": escape(txt),
         "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
-    # send to target & echo back to sender
     emit("pm", payload, to=target_sid)
-    emit("pm", payload)
+    emit("pm", payload)  # echo to sender
+
 
 @socketio.on("delete_message")
 def sio_delete_message(data):
-    """Moderator-only delete by id: {id: 'm000001'}"""
     role = session.get("role", "user")
     if role != "mod":
         return
@@ -163,13 +167,13 @@ def sio_delete_message(data):
     if not mid:
         return
 
-    # remove the message if it exists
     idx = next((i for i, m in enumerate(messages) if m["id"] == mid), None)
     if idx is not None:
         messages.pop(idx)
         emit("message_deleted", {"id": mid}, broadcast=True)
 
-# ---------- Run ----------
+
+# ---------- Entrypoint ----------
 if __name__ == "__main__":
-    # Use eventlet or gevent in production if you want WebSocket support everywhere.
+    # For local dev only. In Render use gunicorn with gevent or gevent-websocket.
     socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
