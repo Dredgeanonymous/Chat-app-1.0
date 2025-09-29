@@ -52,9 +52,11 @@ def push_online(include_self=True):
 
 @socketio.on("connect")
 def sio_connect(auth=None):   # <— make auth optional
-    username = session.get("username", "Anon")
-    role = session.get("role", "user")
-    online_by_sid[request.sid] = {"username": username, "role": role}
+    username = session.get("username","Anon")
+role = session.get("role","user")
+gender = session.get("gender","hidden")
+online_by_sid[request.sid] = {"username": username, "role": role, "gender": gender}
+    
 
     # update roster for everyone
     push_online(include_self=True)
