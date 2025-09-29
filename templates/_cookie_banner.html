@@ -1,0 +1,41 @@
+<!-- Cookie Banner -->
+<div id="cookie-banner" class="cookie-banner" role="dialog" aria-live="polite" aria-label="Cookie consent" hidden>
+  <div class="cookie-inner">
+    <p>
+      We use cookies for login/session, basic analytics, and to show ads. 
+      By using this site you agree to our 
+      <a href="{{ url_for('cookies') }}">Cookies Policy</a> and 
+      <a href="{{ url_for('privacy') }}">Privacy Policy</a>. 
+    </p>
+    <div class="cookie-actions">
+      <button id="cookie-accept" class="btn primary">Accept</button>
+      <a class="btn" href="{{ url_for('cookies') }}">Learn more</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const KEY = "cookie_ok";
+  const banner = document.getElementById("cookie-banner");
+  const btn = document.getElementById("cookie-accept");
+
+  function hasConsent() {
+    return document.cookie.split(";").some(c => c.trim().startsWith(KEY + "="));
+  }
+  function setConsent(days = 180) {
+    const maxAge = 60*60*24*days;
+    // set on root domain so it works on apex + www
+    const root = location.hostname.replace(/^www\./,'');
+    document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; Domain=.${root}; SameSite=Lax`;
+  }
+
+  if (!hasConsent()) {
+    banner.hidden = false;
+  }
+  btn?.addEventListener("click", () => {
+    setConsent();
+    banner.hidden = true;
+  });
+})();
+    </script>
