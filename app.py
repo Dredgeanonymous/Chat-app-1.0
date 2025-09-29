@@ -50,6 +50,24 @@ def push_online(include_self=True):
 def sids_for_user(username: str):
     return [sid for sid, info in online_by_sid.items() if info["username"] == username]
 
+@socketio.on("chat")
+def sio_chat(data=None):
+    user = session.get("username", "Anon")
+    role = session.get("role", "user")
+    gender = session.get("gender", "hidden")
+    text = (data or {}).get("text", "").strip()
+    if not text: 
+        return
+    msg = {
+        "id": str(len(messages)+1),
+        "username": user,
+        "role": role,
+        "gender": gender,
+        "text": text
+    }
+    messages.append(msg)
+    socketio.emit("chat", msg)
+
 @socketio.on("pm")
 def sio_pm(data):
     """data = {"to": "TargetName", "text": "hello"}"""
