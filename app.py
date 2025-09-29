@@ -47,7 +47,30 @@ def push_online(include_self=True):
         to=None,  # everyone
         skip_sid=None if include_self else request.sid
     )
+def sids_for_user(username: str):
+    return [sid for sid, info in online_by_sid.items() if info["username"] == username]
 
+@socketio.on("pm")
+def sio_pm(data):
+    """data = {"to": "TargetName", "text": "hello"}"""
+    sender = session.get("username", "Anon")
+    text = (data or {}).get("text", "").strip()
+    target = (data or {}).get("to", "").strip()
+    if not text or not target or target == sender:
+        return  # drop silently
+
+    targets = sids_for_user(target)
+    if not targets:
+        emit("system", {"text": f"{target} is offline"}, to=request.sid)
+        return
+
+    payload = {"from": sender, "to": target, "text": text, "ts": datetime.now(timezone.utc).isoformat()}
+    # deliver to receiver(s)
+    for sid in targets:
+        emit("pm", payload, to=sid)
+    # echo to sender
+    emit("pm", payload, to=request.sid)
+    
 @socketio.on("connect")
 def sio_connect(auth=None):   # <— make auth optional
     username = session.get("username","Anon")
