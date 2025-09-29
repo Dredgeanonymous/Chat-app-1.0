@@ -1,109 +1,173 @@
-// Ensure the CDN for Socket.IO is loaded before this file.
-// EmojiButton (optional) is loaded by chat.html before this file.
+// static/chat.js — compatible with current server & chat.html
 
 (function () {
-  const socket = io({
-    // If you want to force polling on some hosts:
-    // transports: ["websocket", "polling"],
-    // upgrade: true
+  const socket   = io();
+  const form     = document.getElementById("sendForm");
+  const msgInput = document.getElementById("msgInput");
+  const list     = document.getElementById("messages");
+  const usersBox = document.getElementById("users");
+  const ROLE     = (window.ROLE || "user").toLowerCase();
+
+  if (!form || !msgInput || !list || !usersBox) {
+    console.error("Missing required DOM nodes; check chat.html IDs.");
+  }
+
+  // -------- DM helpers --------
+  let pmTo = null;
+
+  function startPM(username){
+    pmTo = username;
+    msgInput.placeholder = `DM to ${username}…`;
+    msgInput.focus();
+  }
+
+  function parseWhisper(s){
+    const m = s.match(/^\/w\s+(\S+)\s+([\s\S]+)/i);
+    return m ? { to: m[1], text: m[2] } : null;
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape"){
+      pmTo = null;
+      msgInput.placeholder = "Type a message";
+    }
   });
 
-  const messagesEl = document.getElementById("messages");
-  const usersEl = document.getElementById("users");
-  const formEl = document.getElementById("sendForm");
-  const inputEl = document.getElementById("msgInput");
+  // -------- Emoji (safe init) --------
+  try {
+    const emojiBtn = document.createElement("button");
+    emojiBtn.type = "button";
+    emojiBtn.className = "emoji-btn";
+    emojiBtn.title = "Insert emoji";
+    emojiBtn.textContent = "😊";
+    form && form.prepend(emojiBtn);
 
-  const ROLE = (window.ROLE || "user").toLowerCase();
-
-  function el(html) {
-    const tmp = document.createElement("template");
-    tmp.innerHTML = html.trim();
-    return tmp.content.firstElementChild;
+    if (window.EmojiButton) {
+      const picker = new EmojiButton({ position: "top-start", autoHide: true });
+      emojiBtn.addEventListener("click", () => picker.togglePicker(emojiBtn));
+      picker.on("emoji", (emoji) => {
+        msgInput.value += emoji;
+        msgInput.focus();
+      });
+    } else {
+      emojiBtn.addEventListener("click", () => {
+        msgInput.value += " 🙂";
+        msgInput.focus();
+      });
+      console.warn("EmojiButton library not found; using fallback.");
+    }
+  } catch (err) {
+    console.error("Emoji init failed:", err);
   }
 
-  function addMessage(msg) {
-    // msg = {id, user, text, ts}
-    const safeText = String(msg.text || "");
-    const li = el(`
-      <li class="msg" data-id="${msg.id}">
-        <div class="msg-row">
-          <span class="msg-user"><i class="fa-solid fa-user"></i> ${msg.user}</span>
-          <span class="msg-time">${msg.ts || ""}</span>
-          ${ROLE === "mod"
-            ? `<button class="msg-del" title="Delete" data-id="${msg.id}" style="margin-left:8px;">
-                 <i class="fa-solid fa-trash"></i>
-               </button>`
-            : ""}
-        </div>
-        <div class="msg-text">${safeText}</div>
-      </li>
-    `);
-    messagesEl.appendChild(li);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+  // -------- UI helpers --------
+  function genderIcon(g){
+    switch(g){
+      case "male":      return '<i class="fa-solid fa-mars"></i>';
+      case "female":    return '<i class="fa-solid fa-venus"></i>';
+      case "nonbinary": return '<i class="fa-solid fa-genderless"></i>';
+      case "trans":     return '<i class="fa-solid fa-transgender"></i>';
+      case "other":     return '<i class="fa-regular fa-circle-question"></i>';
+      default:          return "";
+    }
   }
 
-  // Submit handler
-  formEl?.addEventListener("submit", (ev) => {
-    ev.preventDefault();
-    const txt = (inputEl.value || "").trim();
+  // Accepts either ["alice","bob"] or [{username,role,gender}, ...]
+  function renderUsers(roster){
+    usersBox.innerHTML = "";
+    (roster || []).forEach(u=>{
+      const isObj = typeof u === "object" && u !== null;
+      const username = isObj ? (u.username || u.user || "Anon") : u;
+      const role     = isObj ? (u.role || "user") : "user";
+      const gender   = isObj ? u.gender : "";
+      const li = document.createElement("li");
+      li.dataset.user = username;
+      li.innerHTML = `<strong>${username}</strong>
+        ${role === "mod" ? '<span class="badge-mod">MOD</span>' : ""}
+        ${gender ? `<span class="g">${genderIcon(gender)} ${gender}</span>` : ""}`;
+      li.addEventListener("click", ()=> startPM(username)); // quick DM
+      usersBox.appendChild(li);
+    });
+  }
+
+  // Server sends {id, user, text, ts?}
+  function renderMessage(m){
+    const id   = m.id;
+    const who  = m.user || m.username || "Anon";
+    const text = m.text || "";
+    const ts   = m.ts || "";
+
+    const li = document.createElement("li");
+    li.dataset.id = id;
+    li.innerHTML = `
+      <div class="msg-row">
+        <strong>${who}</strong>
+        <span class="msg-time">${ts}</span>
+        ${ROLE === "mod" ? `
+          <button class="mini danger msg-del" title="Delete" data-id="${id}">✖</button>
+        ` : ""}
+      </div>
+      <div class="msg-text">${text}</div>
+    `;
+    list.appendChild(li);
+    list.scrollTop = list.scrollHeight;
+  }
+
+  // -------- submit --------
+  form && form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const txt = (msgInput.value || "").trim();
     if (!txt) return;
-    socket.emit("chat", { text: txt });
-    inputEl.value = "";
+
+    const w = parseWhisper(txt);
+    if (w) {
+      socket.emit("pm", w); // "/w user msg"
+    } else if (pmTo) {
+      socket.emit("pm", { to: pmTo, text: txt }); // active DM
+    } else {
+      socket.emit("chat", { text: txt }); // public
+      // removed socket.emit("send_message") — server doesn't handle it
+    }
+
+    msgInput.value = "";
+    msgInput.placeholder = pmTo ? `DM to ${pmTo}…` : "Type a message";
   });
 
-  // Click handler for delete (mods only)
-  messagesEl?.addEventListener("click", (ev) => {
-    const btn = ev.target.closest(".msg-del");
+  // Click-to-delete (mods)
+  list?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".msg-del");
     if (!btn) return;
     const id = btn.getAttribute("data-id");
-    if (!id) return;
-    socket.emit("delete_message", { id });
+    if (id) socket.emit("delete_message", { id });
   });
 
-  // Online list
-  socket.on("online", (list) => {
-    usersEl.innerHTML = "";
-    (list || []).forEach((u) => {
-      usersEl.appendChild(el(`<li><i class="fa-solid fa-circle-user"></i> ${u}</li>`));
-    });
+  // -------- listeners --------
+  socket.on("online", renderUsers);
+
+  socket.on("chat_history", (arr) => {
+    list.innerHTML = "";
+    (arr || []).forEach(renderMessage);
   });
 
-  // History and live chat
-  socket.on("chat_history", (msgs) => {
-    messagesEl.innerHTML = "";
-    (msgs || []).forEach(addMessage);
+  socket.on("chat", renderMessage);
+  // removed socket.on("message") — server doesn't emit it
+
+  socket.on("pm", (m) => {
+    const li = document.createElement("li");
+    li.className = "msg pm";
+    li.textContent = `(DM) ${m.from} → ${m.to}: ${m.text}`;
+    list.appendChild(li);
+    list.scrollTop = list.scrollHeight;
   });
 
-  socket.on("chat", (msg) => {
-    addMessage(msg);
-  });
-
-  // Private messages (optional UI - you can build inputs for this)
-  socket.on("pm", (payload) => {
-    // For now, show PM inline with a prefix
-    addMessage({
-      id: `pm_${Date.now()}`,
-      user: `${payload.from} ➜ ${payload.to} (PM)`,
-      text: payload.text,
-      ts: payload.ts
-    });
-  });
-
-  // NEW: react to deletions
+  // NEW: keep UI in sync with moderator deletions
   socket.on("message_deleted", ({ id }) => {
     const li = document.querySelector(`li[data-id="${id}"]`);
     if (li) li.remove();
   });
 
-  // Optional: Emoji picker hookup (requires a trigger/button in your HTML if desired)
-  // Example minimal wiring (if you add a button with id="emojiBtn"):
-  const emojiBtn = document.getElementById("emojiBtn");
-  if (window.EmojiButton && emojiBtn) {
-    const picker = new EmojiButton();
-    picker.on("emoji", emoji => {
-      inputEl.value += emoji;
-      inputEl.focus();
-    });
-    emojiBtn.addEventListener("click", () => picker.togglePicker(emojiBtn));
-  }
+  // Debug hooks
+  socket.on("connect", () => console.log("Socket connected", socket.id));
+  socket.on("connect_error", (e) => console.error("connect_error", e));
+  socket.on("disconnect", (r) => console.warn("disconnected", r));
 })();
