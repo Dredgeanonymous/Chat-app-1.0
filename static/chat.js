@@ -8,6 +8,30 @@ const form     = document.getElementById("sendForm");   // form id="sendForm"
 const msgInput = document.getElementById("msgInput");  // input id="msgInput"
 const list     = document.getElementById("messages");  // ul id="messages"
 const usersBox = document.getElementById("users");     // ul id="users"
+function genderIcon(g){
+  switch(g){
+    case 'male': return '<i class="fa-solid fa-mars"></i>';
+    case 'female': return '<i class="fa-solid fa-venus"></i>';
+    case 'nonbinary': return '<i class="fa-solid fa-genderless"></i>';
+    case 'trans': return '<i class="fa-solid fa-transgender"></i>';
+    case 'other': return '<i class="fa-regular fa-circle-question"></i>';
+    default: return '';
+  }
+}
+
+function renderUsers(roster){
+  usersBox.innerHTML = '';
+  roster.forEach(u=>{
+    const li = document.createElement('li');
+    li.dataset.user = u.username;
+    li.innerHTML = `<strong>${u.username}</strong>
+      ${u.role === 'mod' ? '<span class="badge-mod">MOD</span>' : ''}
+      <span class="g">${genderIcon(u.gender)} ${u.gender || ''}</span>`;
+    // click to prepare PM
+    li.addEventListener('click', ()=> startPM(u.username));
+    usersBox.appendChild(li);
+  });
+}
 // Emoji picker (optional)
 let picker;
 const emojiBtn = document.createElement('button');
