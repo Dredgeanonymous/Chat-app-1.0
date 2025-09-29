@@ -57,13 +57,39 @@
   </div>
 </div>
 <script>
-  const ok = document.cookie.includes("age_ok=1");
-  const gate = document.getElementById('age-gate');
-  if (ok) gate.style.display = 'none';
-  document.getElementById('enterBtn').onclick = () => {
-    document.cookie = "age_ok=1; max-age=" + 60*60*24*30 + "; path=/; SameSite=Lax";
-    gate.style.display = 'none';
-  };
+(function(){
+  const COOKIE = "age_ok";
+  // make the cookie work on both apex and www
+  const ROOT_DOMAIN = location.hostname.replace(/^www\./,'');
+  const COOKIE_DOMAIN = "." + ROOT_DOMAIN;
+
+  const gate = document.getElementById("age-gate");
+  const enter = document.getElementById("enterBtn");
+
+  function hasCookie(){
+    return document.cookie.split(";").some(c => c.trim().startsWith(COOKIE + "="));
+  }
+  function setCookie(days=30){
+    const maxAge = 60*60*24*days;
+    document.cookie = `${COOKIE}=1; Max-Age=${maxAge}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
+  }
+
+  // show by default; hide only if cookie is present
+  if (hasCookie()){
+    gate.style.display = "none";
+    document.body.classList.remove("agelock");
+  } else {
+    gate.style.display = "flex";
+    document.body.classList.add("agelock");
+    gate.style.zIndex = "99999"; // make sure it's on top
+  }
+
+  enter.addEventListener("click", () => {
+    setCookie(30);
+    gate.style.display = "none";
+    document.body.classList.remove("agelock");
+  });
+})();
 </script>
 
 </body>
