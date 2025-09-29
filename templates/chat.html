@@ -1,37 +1,22 @@
-<!doctype html>
-<html lang="en" data-role="{{ role|e }}">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chat</title>
+{% extends "base.html" %}
 
-  <!-- Site verification -->
-  <meta name="juicyads-site-verification" content="3a2230dfb5fd4e823902e42403b11f9a">
+{% block title %}Chat · Hot Singles Chat{% endblock %}
 
-  <!-- Theme / manifest / styles -->
-  <meta name="theme-color" content="#111111">
-  <!-- Use static endpoint so no custom Flask route is needed -->
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{# Expose the role to the DOM so chat.js can read it #}
+{% block body_data %}data-role="{{ role|e }}"{% endblock %}
 
-  <!-- Optional: lock body when gate shown -->
+{% block extra_head %}
+  <!-- Emoji picker (must load before chat.js uses it) -->
+  <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js" crossorigin="anonymous"></script>
+
+  <!-- Optional: lock body when age gate shown -->
   <style>.agelock{overflow:hidden}</style>
 
-  <!-- Font Awesome -->
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-        crossorigin="anonymous"/>
+  <!-- (Optional) Google AdSense loader -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264" crossorigin="anonymous"></script>
+{% endblock %}
 
-  <!-- Emoji picker (must load before chat.js uses it) -->
-  <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js"
-          crossorigin="anonymous"></script>
-
-  <!-- Google AdSense (optional; you can remove if not using an ad slot) -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264"
-          crossorigin="anonymous"></script>
-</head>
-
-<body data-role="{{ role|e }}">
+{% block content %}
   <header class="topbar">
     <div>Logged in as <strong>{{ username|e }}</strong> ({{ role|e }})</div>
     <a class="btn" href="{{ url_for('logout') }}">Logout</a>
@@ -52,36 +37,6 @@
     </section>
   </main>
 
-  <!-- JuicyAds (load script ONCE, then push ONE zone) -->
-  <script data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-  <ins id="1102385" data-width="800" data-height="100"></ins>
-  <script data-cfasync="false" async>
-    (window.adsbyjuicy = window.adsbyjuicy || []).push({ adzone: 1102385 });
-  </script>
-  <!-- JuicyAds END -->
-
-  <!-- Infolinks -->
-  <script>var infolinks_pid = 3440424; var infolinks_wsid = 0;</script>
-  <script src="//resources.infolinks.com/js/infolinks_main.js"></script>
-
-  <!-- Socket.IO client -->
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
-
-  <!-- Make role visible to chat.js -->
-  <script>
-    window.ROLE = document.body.dataset.role || 'user';
-  </script>
-
-  <!-- Your chat.js -->
-  <script src="{{ url_for('static', filename='chat.js') }}"></script>
-
-  <!-- Service worker (serve from /static; no custom route needed) -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('{{ url_for("static", filename="sw.js") }}').catch(()=>{});
-    }
-  </script>
-
   <!-- Age Gate -->
   <div id="age-gate" style="position:fixed;inset:0;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;z-index:99999;">
     <div style="max-width:520px;text-align:center;padding:24px;">
@@ -93,7 +48,28 @@
       </noscript>
     </div>
   </div>
+{% endblock %}
 
+{% block extra_scripts %}
+  <!-- JuicyAds (load once, push one zone) -->
+  <script data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
+  <ins id="1102385" data-width="800" data-height="100"></ins>
+  <script data-cfasync="false" async>
+    (window.adsbyjuicy = window.adsbyjuicy || []).push({ adzone: 1102385 });
+  </script>
+
+  <!-- Infolinks -->
+  <script>var infolinks_pid = 3440424; var infolinks_wsid = 0;</script>
+  <script src="//resources.infolinks.com/js/infolinks_main.js"></script>
+
+  <!-- Socket.IO client + role exposure for chat.js -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+  <script>window.ROLE = document.body.dataset.role || 'user';</script>
+
+  <!-- Your chat logic -->
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+
+  <!-- Age gate logic -->
   <script data-cfasync="false">
   document.addEventListener('DOMContentLoaded', function () {
     const KEY  = 'age_ok';
@@ -128,11 +104,8 @@
       setConsent(30);
       gate.style.display = 'none';
       document.body.classList.remove('agelock');
-      setTimeout(() => {
-        if (!hasConsent()) location.reload();
-      }, 50);
+      setTimeout(() => { if (!hasConsent()) location.reload(); }, 50);
     });
   });
   </script>
-</body>
-  </html>
+{% endblock %}
