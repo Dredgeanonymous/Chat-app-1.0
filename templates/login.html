@@ -9,7 +9,7 @@
 </head>
 <body class="login">
   <div class="card">
-    <h1>Join Chat</h1>
+  
     {% if error %}
       <div class="alert">{{ error }}</div>
     {% endif %}
@@ -18,12 +18,12 @@
   
   <!-- 🔥 Branding + Description goes here -->
   <div style="text-align:center; color:white; padding:20px;">
-    <h1 style="font-size:2em; margin-bottom:10px;">HotSinglesChat</h1>
+    <h1 style="font-size:2em; margin-bottom:10px;">Hot Singles Chat</h1>
     <p style="font-size:1.1em; max-width:500px; margin:0 auto 20px;">
       Meet, connect, and chat live with singles near you and around the world. 
-      Welcome to <b>HotSinglesChat</b> — the place where real people come 
+      Welcome to <b>Hot Singles Chat</b> — the place where real people come 
       together for fun conversations, flirty connections, and maybe even more. 
-      Choose your username below and
+      Choose your username below and Join the chat!
     <form method="post" action="{{ url_for('login') }}">
   <label>Username</label>
   <input name="username" autocomplete="nickname" required>
