@@ -1,15 +1,16 @@
 /* ===== Theme ===== */
 :root{
-  --bg:#0e1320;
-  --panel:#151a2b;
-  --border:#1d2544;
-  --soft-border:#1b202b;
-  --card:#0f1117;
-  --text:#e9eefb;
-  --muted:#9fb0d0;
-  --accent:#4f8cff;
-  --accent-2:#ff3d71;
+  --bg:#0b0b0b;          /* black background */
+  --panel:#141414;       /* slightly lighter black panels */
+  --border:#222;         /* subtle gray borders */
+  --soft-border:#1a1a1a; /* softer border for lists/messages */
+  --card:#111;           /* card/message background */
+  --text:#e9eefb;        /* light text */
+  --muted:#9fb0d0;       /* muted secondary text (kept bluish) */
+  --accent:#007bff;      /* bright blue (buttons, highlights) */
+  --accent-2:#e63946;    /* strong red (danger, mod badge, delete) */
 }
+
 
 *{ box-sizing:border-box; }
 html,body{ height:100%; }
