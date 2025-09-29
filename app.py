@@ -1,4 +1,3 @@
-python - <<'PY'
 import os
 from pathlib import Path
 from app import app, TEMPLATES_DIR
