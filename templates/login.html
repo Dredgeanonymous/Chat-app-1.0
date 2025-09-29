@@ -1,22 +1,10 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Login</title>
+{% extends "base.html" %}
 
-  <!-- JuicyAds site verification (fixed) -->
-  <meta name="juicyads-site-verification" content="3a2230dfb5fd4e823902e42403b11f9a">
+{% block title %}Login · Hot Singles Chat{% endblock %}
 
-  <!-- PWA + styles -->
-  <meta name="theme-color" content="#0d0d0d">
-  <!-- If you have this file in /static, this works; otherwise delete the line -->
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
+{% block body_class %}login{% endblock %}
 
-<body class="login" style="background:#0d0d0d; font-family:sans-serif;">
-
+{% block content %}
   <div class="card" style="max-width:560px;margin:48px auto;padding:24px;background:#131313;border-radius:12px;color:#fff;">
     {% if error %}
       <div class="alert" role="alert" style="background:#2a1010;border:1px solid #6b1d1d;padding:12px;border-radius:8px;margin-bottom:16px;">
@@ -24,7 +12,6 @@
       </div>
     {% endif %}
 
-    <!-- Branding + description -->
     <div style="text-align:center; padding:8px 12px 20px;">
       <h1 style="font-size:2rem; margin:0 0 10px;">Hot Singles Chat</h1>
       <p style="font-size:1.05rem; line-height:1.5; max-width:520px; margin:0 auto;">
@@ -35,7 +22,6 @@
       </p>
     </div>
 
-    <!-- Login form -->
     <form method="post" action="{{ url_for('login') }}" style="display:grid; gap:12px; margin-top:16px;">
       <label for="username">Username</label>
       <input id="username" name="username" autocomplete="nickname" required
@@ -69,15 +55,6 @@
     </form>
   </div>
 
-  <!-- Cookie banner should be OUTSIDE the form -->
+  <!-- Cookie banner partial (optional) -->
   {% include "_cookie_banner.html" %}
-
-
-  <!-- Service worker register (only if static/sw.js exists) -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('{{ url_for("static", filename="sw.js") }}').catch(()=>{});
-    }
-  </script>
-</body>
-          </html>
+{% endblock %}
