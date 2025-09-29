@@ -16,17 +16,17 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="gevent",              # match gevent worker
+    async_mode="gevent",
     logger=True,
     engineio_logger=True,
-    message_queue=os.environ.get("REDIS_URL")  # OK if None
+    message_queue=os.environ.get("REDIS_URL")
 )
 
 MOD_CODE = os.environ.get("MOD_CODE", "12345")
 
-# -------------------------------------------------
+# ------------------------------
 # In-memory state (demo)
-# -------------------------------------------------
+# ------------------------------
 # sid -> {"username": str, "role": "user"|"mod", "gender": str}
 online_by_sid = {}
 # simple message log (resets on redeploy)
@@ -34,55 +34,57 @@ messages = []
 
 
 def online_list():
-    """Unique user list across tabs, with role+gender."""
+    """Unique roster by username, last-seen role/gender."""
     seen = {}
     for info in online_by_sid.values():
-        u = info["username"]
-        seen[u] = {"role": info["role"], "gender": info.get("gender", "hidden")}
-    # return list of dicts: {username, role, gender}
+        seen[info["username"]] = {
+            "role": info["role"],
+            "gender": info.get("gender", "hidden"),
+        }
     return [{"username": u, **rg} for u, rg in sorted(seen.items())]
 
 
-def push_online(include_self: bool = True):
-    """Broadcast the roster to everyone (optionally skip sender)."""
+def push_online(include_self=True):
+    """Broadcast roster to everyone (optionally exclude triggering sid)."""
     roster = online_list()
     socketio.emit(
         "online",
         roster,
-        to=None,                                 # everyone
-        skip_sid=None if include_self else request.sid
+        to=None,
+        skip_sid=None if include_self else request.sid,
     )
 
 
 def sids_for_user(username: str):
-    return [sid for sid, info in online_by_sid.items() if info["username"] == username]
+    return [sid for sid, info in online_by_sid.items()
+            if info["username"] == username]
 
-
-# -------------------------------------------------
+# ------------------------------
 # Socket.IO events
-# -------------------------------------------------
+# ------------------------------
+
 @socketio.on("connect")
 def sio_connect(auth=None):
-    """On connect: register the client, send history + roster."""
+    # read session
     username = session.get("username", "Anon")
-    if not username:
-        # No flask session -> reject
-        return False
-
     role = session.get("role", "user")
     gender = session.get("gender", "hidden")
-    online_by_sid[request.sid] = {"username": username, "role": role, "gender": gender}
 
-    # Send backlog just to this client
-    emit("chat_history", messages, to=request.sid)
+    # attach connection
+    online_by_sid[request.sid] = {
+        "username": username,
+        "role": role,
+        "gender": gender,
+    }
 
-    # Broadcast roster to everyone (including this client once)
+    # send backlog to this client only
+    socketio.emit("chat_history", messages, to=request.sid)
+    # update roster for everyone
     push_online(include_self=True)
 
 
 @socketio.on("disconnect")
 def sio_disconnect():
-    """On disconnect: drop from roster and broadcast."""
     online_by_sid.pop(request.sid, None)
     push_online(include_self=False)
 
@@ -105,17 +107,17 @@ def sio_chat(data=None):
         "ts": datetime.now(timezone.utc).isoformat(),
     }
     messages.append(msg)
-    socketio.emit("chat", msg)  # broadcast
+    socketio.emit("chat", msg)
 
 
 @socketio.on("pm")
-def sio_pm(data=None):
-    """Private message: {to: 'Name', text: 'hello'}"""
+def sio_pm(data):
+    """Private message: data = {'to': <username>, 'text': <str>}"""
     sender = session.get("username", "Anon")
     text = (data or {}).get("text", "").strip()
     target = (data or {}).get("to", "").strip()
     if not text or not target or target == sender:
-        return  # drop silently
+        return
 
     targets = sids_for_user(target)
     if not targets:
@@ -136,23 +138,22 @@ def sio_pm(data=None):
 
 
 @socketio.on("delete_message")
-def sio_delete_message(data=None):
-    """Allow moderators to delete a message by id."""
+def sio_delete_message(data):
     if session.get("role") != "mod":
         return
     mid = (data or {}).get("id")
     if not mid:
         return
-    idx = next((i for i, m in enumerate(messages) if m["id"] == mid), None)
+    idx = next((i for i, m in enumerate(messages) if m["id"] == str(mid)), None)
     if idx is None:
         return
     removed = messages.pop(idx)
-    socketio.emit("message_deleted", {"id": removed["id"]})  # broadcast
+    socketio.emit("message_deleted", {"id": removed["id"]})
 
+# ------------------------------
+# HTTP routes / helpers
+# ------------------------------
 
-# -------------------------------------------------
-# HTTP routes
-# -------------------------------------------------
 @app.route("/healthz")
 def healthz():
     return "ok", 200
@@ -163,11 +164,11 @@ def api_online():
     return jsonify(online_list())
 
 
-# PWA passthroughs
 @app.route("/manifest.webmanifest")
 def manifest():
     return send_from_directory(
-        "static", "manifest.webmanifest", mimetype="application/manifest+json"
+        "static", "manifest.webmanifest",
+        mimetype="application/manifest+json"
     )
 
 
@@ -184,8 +185,8 @@ def root():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = (request.form.get("username", "Anon") or "").strip()[:24]
-        gender = (request.form.get("gender", "hidden") or "hidden").strip()
+        username = request.form.get("username", "Anon").strip()[:24]
+        gender = request.form.get("gender", "hidden")
         mod_try = (request.form.get("mod_code") or "").strip()
 
         if not username:
@@ -216,10 +217,8 @@ def logout():
     return redirect(url_for("login"))
 
 
-# -------------------------------------------------
+# ------------------------------
 # Entrypoint (local dev)
-# -------------------------------------------------
+# ------------------------------
 if __name__ == "__main__":
-    # In production use Gunicorn with gevent worker:
-    #   gunicorn -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 app:app
     socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
