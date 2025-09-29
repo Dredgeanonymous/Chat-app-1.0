@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from flask import (
+from flask import send_from_directory import (
     Flask, render_template, request, redirect,
     url_for, session
 )
@@ -61,6 +61,17 @@ def chat():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+    @app.route("/manifest")
+def manifest():
+    # Make sure this file exists at: static/manifest.webmanifest
+    return send_from_directory("static", "manifest.webmanifest",
+                               mimetype="application/manifest+json")
+
+@app.route("/sw")
+def sw():
+    # Make sure this file exists at: static/sw.js
+    return send_from_directory("static", "sw.js",
+                               mimetype="application/javascript")
 
 # ---------- Socket.IO events ----------
 @socketio.on("connect")
