@@ -84,6 +84,33 @@ def chat():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+# ----- Legal/static pages -----
+@app.route("/cookies")
+def cookies():
+    return render_template("cookies.html")
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+# ----- Service worker (so /sw.js resolves) -----
+@app.route("/sw.js")
+def sw():
+    # Make sure static/sw.js exists in your repo
+    return send_from_directory("static", "sw.js",
+                               mimetype="application/javascript")
+
+# (Optional) manifest at /manifest if any template links there
+@app.route("/manifest")
+def manifest():
+    # Make sure static/manifest.webmanifest exists if you keep this
+    return send_from_directory("static", "manifest.webmanifest",
+                               mimetype="application/manifest+json")
+
 
 
 # ---------- Socket.IO events ----------
