@@ -118,7 +118,7 @@ form.addEventListener("submit", (e) => {
     socket.emit("pm", { to: pmTo, text: txt });
   // 3) Public message → match server @socketio.on("send_message")
   } else {
-    socket.emit("send_message", { text: txt });
+    socket.emit("chat", { text: txt });
   }
 
   msgInput.value = "";
