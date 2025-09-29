@@ -101,56 +101,34 @@ emojiBtn.addEventListener('click', () => {
   picker.togglePicker(emojiBtn);
 });
 // ---- helpers ----
+
 function renderMessage(m) {
   const li = document.createElement("li");
   li.dataset.id = m.id;
 
+  // Gender icon
+  const g = m.gender ? `<span class="g">${genderIcon(m.gender)}</span>` : '';
   const who = m.username || "Anon";
-  li.textContent = `${who}: ${m.text}`;
+
+  // Base content
+  li.innerHTML = `<strong>${who}</strong> ${g}: ${m.text}`;
 
   // Add delete button if moderator
-if (window.ROLE === "mod") {
-  const del = document.createElement("button");
-  del.textContent = "✖";
-  del.title = "Delete";
-  del.className = "mini danger";
-  del.addEventListener("click", () => {
-    socket.emit("delete_message", { id: m.id });
-  });
-  li.appendChild(document.createTextNode(" "));
-  li.appendChild(del);
-}
+  if (window.ROLE === "mod") {
+    const del = document.createElement("button");
+    del.textContent = "✖";
+    del.title = "Delete";
+    del.className = "mini danger";
+    del.addEventListener("click", () => {
+      socket.emit("delete_message", { id: m.id });
+    });
+
+    li.appendChild(document.createTextNode(" "));
+    li.appendChild(del);
+  }
 
   list.appendChild(li);
-}
-
-function removeMessageById(id) {
-  const li = list.querySelector(`li[data-id="${id}"]`);
-  if (li) li.remove();
-}
-
-// ---- incoming events ----
-socket.on("chat_history", (history) => {
-  list.innerHTML = "";
-  (history || []).forEach(renderMessage);
-});
-
-socket.on("new_message", (m) => {
-  renderMessage(m);
-});
-
-socket.on("message_deleted", ({ id }) => {
-  removeMessageById(id);
-});
-
-socket.on("online", (roster) => {
-  usersBox.innerHTML = "";
-  (roster || []).forEach((user) => {
-    const li = document.createElement("li");
-    li.textContent = user.role === "mod" ? `${user.username} (mod)` : user.username;
-    usersBox.appendChild(li);
-  });
-});
+    }
 
 // ---- form submission ----
 form.addEventListener("submit", (e) => {
