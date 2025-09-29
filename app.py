@@ -31,14 +31,12 @@ MOD_CODE = os.environ.get("MOD_CODE", "12345")
 online_by_sid = {}
 # simple message log (resets on redeploy)
 messages = []
-
 def online_list():
-    # Unique list; if same user opens multiple tabs, show once
     seen = {}
     for info in online_by_sid.values():
-        seen[info["username"]] = info["role"]
-    # return list of dicts like {"username": u, "role": r}
-    return [{"username": u, "role": r} for u, r in sorted(seen.items())]
+        seen[info["username"]] = {"role": info["role"], "gender": info.get("gender","hidden")}
+    # return list of dicts: {username, role, gender}
+    return [{"username": u, **rg} for u, rg in sorted(seen.items())]
 
 def push_online(include_self=True):
     roster = online_list()
