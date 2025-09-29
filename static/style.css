@@ -1,3 +1,36 @@
+/* Cookie banner */
+.cookie-banner {
+  position: fixed;
+  inset: auto 0 0 0;
+  background: #0f172a;          /* dark */
+  color: #e2e8f0;
+  border-top: 1px solid #334155;
+  z-index: 9999;
+}
+.cookie-banner .cookie-inner{
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.cookie-banner a { color: #60a5fa; text-decoration: underline; }
+.cookie-actions { display:flex; gap:8px; }
+.cookie-actions .btn{
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #374151;
+}
+.cookie-actions .btn.primary{
+  background: #2563eb;          /* blue accept button */
+  border-color: #1d4ed8;
+  color: white;
+}
 /* Layout bones */
 .site { background:#0b0b0f; color:#e8eaf0; min-height:100dvh; display:flex; flex-direction:column; }
 .site-header, .site-footer { background:#0f1117; border-bottom:1px solid #161a22; }
