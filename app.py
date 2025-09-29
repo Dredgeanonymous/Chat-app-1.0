@@ -61,7 +61,7 @@ def chat():
 def logout():
     session.clear()
     return redirect(url_for("login"))
-    @app.route("/manifest")
+@app.route("/manifest")
 def manifest():
     # Make sure this file exists at: static/manifest.webmanifest
     return send_from_directory("static", "manifest.webmanifest",
