@@ -136,7 +136,8 @@ socket.on("chat_history", arr => {
 });
 
 // new public message
-socket.on("message", renderMessage);
+// new
+socket.on("chat", renderMessage);
 
 // private messages
 socket.on("pm", m => {
