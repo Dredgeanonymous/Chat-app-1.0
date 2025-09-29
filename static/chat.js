@@ -8,7 +8,25 @@ const form     = document.getElementById("sendForm");   // form id="sendForm"
 const msgInput = document.getElementById("msgInput");  // input id="msgInput"
 const list     = document.getElementById("messages");  // ul id="messages"
 const usersBox = document.getElementById("users");     // ul id="users"
+// Emoji picker (optional)
+let picker;
+const emojiBtn = document.createElement('button');
+emojiBtn.type = 'button';
+emojiBtn.className = 'emoji-btn';
+emojiBtn.title = 'Insert emoji';
+emojiBtn.innerHTML = '😊';
+document.getElementById('sendForm').prepend(emojiBtn);
 
+emojiBtn.addEventListener('click', () => {
+  if (!picker) {
+    picker = new EmojiButton({ position: 'top-start', autoHide: true });
+    picker.on('emoji', emoji => {
+      msgInput.value += emoji;
+      msgInput.focus();
+    });
+  }
+  picker.togglePicker(emojiBtn);
+});
 // ---- helpers ----
 function renderMessage(m) {
   const li = document.createElement("li");
