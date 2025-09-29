@@ -1,241 +1,158 @@
-# ---- app.py ----
-from gevent import monkey
-monkey.patch_all()  # MUST be first
-
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, send_from_directory, jsonify
+    url_for, session
 )
-from flask_socketio import SocketIO, emit, disconnect
+from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
+from markupsafe import escape
 
+# ---------- Config ----------
 app = Flask(__name__, static_folder="static", template_folder="templates")
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me")
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode="gevent",
-    logger=True,
-    engineio_logger=True,
-    message_queue=os.environ.get("REDIS_URL")
-)
+# Simple moderator gate (change this!)
+MOD_CODE = os.environ.get("MOD_CODE", "letmein")
 
-MOD_CODE = os.environ.get("MOD_CODE", "12345")
+# ---------- In-memory state (demo only) ----------
+messages = []  # [{id, user, text, ts}]
+online_by_sid = {}  # sid -> {"username": str, "role": "user"|"mod"}
+sid_by_username = {}  # username -> sid
 
-# ------------------------------
-# In-memory state (demo)
-# ------------------------------
-# sid -> {"username": str, "role": "user"|"mod", "gender": str}
-online_by_sid = {}
-# simple message log (resets on redeploy)
-messages = []
-
-
-def online_list():
-    """Unique roster by username, last-seen role/gender."""
-    seen = {}
-    for info in online_by_sid.values():
-        seen[info["username"]] = {
-            "role": info["role"],
-            "gender": info.get("gender", "hidden"),
-        }
-    return [{"username": u, **rg} for u, rg in sorted(seen.items())]
-
-
-def push_online(include_self=True):
-    """Broadcast roster to everyone (optionally exclude triggering sid)."""
-    roster = online_list()
-    socketio.emit(
-        "online",
-        roster,
-        to=None,
-        skip_sid=None if include_self else request.sid,
-    )
-
-
-def sids_for_user(username: str):
-    return [sid for sid, info in online_by_sid.items()
-            if info["username"] == username]
-
-# ------------------------------
-# Socket.IO events
-# ------------------------------
-
-@socketio.on("connect")
-def sio_connect(auth=None):
-    # read session
-    username = session.get("username", "Anon")
+def current_user():
+    uname = session.get("username")
     role = session.get("role", "user")
-    gender = session.get("gender", "hidden")
+    return uname, role
 
-    # attach connection
-    online_by_sid[request.sid] = {
-        "username": username,
-        "role": role,
-        "gender": gender,
-    }
+def next_msg_id():
+    return f"m{len(messages)+1:06d}"
 
-    # send backlog to this client only
-    socketio.emit("chat_history", messages, to=request.sid)
-    # update roster for everyone
-    push_online(include_self=True)
-
-
-@socketio.on("disconnect")
-def sio_disconnect():
-    online_by_sid.pop(request.sid, None)
-    push_online(include_self=False)
-
-
-@socketio.on("chat")
-def sio_chat(data=None):
-    """Public chat message."""
-    user = session.get("username", "Anon")
-    role = session.get("role", "user")
-    gender = session.get("gender", "hidden")
-    text = (data or {}).get("text", "").strip()
-    if not text:
-        return
-    msg = {
-        "id": str(len(messages) + 1),
-        "username": user,
-        "role": role,
-        "gender": gender,
-        "text": text,
-        "ts": datetime.now(timezone.utc).isoformat(),
-    }
-    messages.append(msg)
-    socketio.emit("chat", msg)
-
-
-@socketio.on("pm")
-def sio_pm(data):
-    """Private message: data = {'to': <username>, 'text': <str>}"""
-    sender = session.get("username", "Anon")
-    text = (data or {}).get("text", "").strip()
-    target = (data or {}).get("to", "").strip()
-    if not text or not target or target == sender:
-        return
-
-    targets = sids_for_user(target)
-    if not targets:
-        emit("system", {"text": f"{target} is offline"}, to=request.sid)
-        return
-
-    payload = {
-        "from": sender,
-        "to": target,
-        "text": text,
-        "ts": datetime.now(timezone.utc).isoformat(),
-    }
-    # deliver to receiver(s)
-    for sid in targets:
-        emit("pm", payload, to=sid)
-    # echo to sender
-    emit("pm", payload, to=request.sid)
-
-
-@socketio.on("delete_message")
-def sio_delete_message(data):
-    if session.get("role") != "mod":
-        return
-    mid = (data or {}).get("id")
-    if not mid:
-        return
-    idx = next((i for i, m in enumerate(messages) if m["id"] == str(mid)), None)
-    if idx is None:
-        return
-    removed = messages.pop(idx)
-    socketio.emit("message_deleted", {"id": removed["id"]})
-
-# ------------------------------
-# HTTP routes / helpers
-# ------------------------------
-
-@app.route("/healthz")
-def healthz():
-    return "ok", 200
-
-
-@app.route("/api/online")
-def api_online():
-    return jsonify(online_list())
-
-
-@app.route("/manifest.webmanifest")
-def manifest():
-    return send_from_directory(
-        "static", "manifest.webmanifest",
-        mimetype="application/manifest+json"
-    )
-
-
-@app.route("/sw.js")
-def sw():
-    return send_from_directory("static", "sw.js", mimetype="application/javascript")
-
-
-@app.route("/", methods=["GET"])
+# ---------- Routes ----------
+@app.route("/")
 def root():
+    # Send users to login first
     return redirect(url_for("login"))
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username", "Anon").strip()[:24]
-        gender = request.form.get("gender", "hidden")
-        mod_try = (request.form.get("mod_code") or "").strip()
+        username = (request.form.get("username") or "").strip()
+        mod_code = (request.form.get("mod_code") or "").strip()
 
         if not username:
-            return render_template("login.html", error="Please enter a username.")
+            return render_template("login.html", error="Username is required.")
 
+        role = "mod" if mod_code and mod_code == MOD_CODE else "user"
         session["username"] = username
-        session["gender"] = gender
-        session["role"] = "mod" if (mod_try and mod_try == MOD_CODE) else "user"
+        session["role"] = role
         return redirect(url_for("chat"))
 
-    return render_template("login.html")
-
+    return render_template("login.html", error=None)
 
 @app.route("/chat")
 def chat():
-    if "username" not in session:
+    uname, role = current_user()
+    if not uname:
         return redirect(url_for("login"))
-    return render_template(
-        "chat.html",
-        username=session["username"],
-        role=session.get("role", "user"),
-    )
-
+    return render_template("chat.html", username=uname, role=role)
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
-@app.context_processor
-def inject_now():
-    return {"now": datetime.utcnow}
 
-@app.route("/")
-def landing():
-    return render_template("landing.html")
+# ---------- Socket.IO events ----------
+@socketio.on("connect")
+def sio_connect():
+    uname = session.get("username")
+    role = session.get("role", "user")
+    if not uname:
+        # Not logged in -> refuse socket
+        disconnect()
+        return
 
-@app.route("/privacy")
-def privacy():
-    return render_template("privacy.html")
+    online_by_sid[request.sid] = {"username": uname, "role": role}
+    sid_by_username[uname] = request.sid
 
-@app.route("/terms")
-def terms():
-    return render_template("terms.html")
+    # Send initial state to this client
+    emit("chat_history", messages[-100:])  # last 100 msgs
 
-@app.route("/cookies")
-def cookies():
-    return render_template("cookies.html")
-# ------------------------------
-# Entrypoint (local dev)
-# ------------------------------
+    # Broadcast updated online list
+    emit("online", sorted(sid_by_username.keys()), broadcast=True)
+
+@socketio.on("disconnect")
+def sio_disconnect():
+    info = online_by_sid.pop(request.sid, None)
+    if info:
+        uname = info["username"]
+        sid_by_username.pop(uname, None)
+        emit("online", sorted(sid_by_username.keys()), broadcast=True)
+
+@socketio.on("chat")
+def sio_chat(data):
+    """Public chat message"""
+    uname = session.get("username")
+    if not uname:
+        return
+
+    txt = (data or {}).get("text", "").strip()
+    if not txt:
+        return
+
+    msg = {
+        "id": next_msg_id(),
+        "user": uname,
+        "text": escape(txt),
+        "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+    }
+    messages.append(msg)
+    emit("chat", msg, broadcast=True)
+
+@socketio.on("pm")
+def sio_pm(data):
+    """Private message: {to: username, text: str}"""
+    uname = session.get("username")
+    if not uname:
+        return
+
+    to_user = (data or {}).get("to", "").strip()
+    txt = (data or {}).get("text", "").strip()
+    if not to_user or not txt:
+        return
+
+    target_sid = sid_by_username.get(to_user)
+    if not target_sid:
+        return
+
+    payload = {
+        "from": uname,
+        "to": to_user,
+        "text": escape(txt),
+        "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+    }
+    # send to target & echo back to sender
+    emit("pm", payload, to=target_sid)
+    emit("pm", payload)
+
+@socketio.on("delete_message")
+def sio_delete_message(data):
+    """Moderator-only delete by id: {id: 'm000001'}"""
+    role = session.get("role", "user")
+    if role != "mod":
+        return
+
+    mid = (data or {}).get("id")
+    if not mid:
+        return
+
+    # remove the message if it exists
+    idx = next((i for i, m in enumerate(messages) if m["id"] == mid), None)
+    if idx is not None:
+        messages.pop(idx)
+        emit("message_deleted", {"id": mid}, broadcast=True)
+
+# ---------- Run ----------
 if __name__ == "__main__":
+    # Use eventlet or gevent in production if you want WebSocket support everywhere.
     socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
