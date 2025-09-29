@@ -1,4 +1,4 @@
-# app.py  — Flask + Flask-SocketIO (gevent/gunicorn friendly)
+# app.py — Flask + Flask-SocketIO (gevent/gunicorn friendly)
 
 import os
 from datetime import datetime
@@ -6,110 +6,68 @@ from pathlib import Path
 
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, send_from_directory   # ← add this
+    url_for, session, send_from_directory
 )
-
-from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
+from flask_socketio import SocketIO, emit, disconnect
 from markupsafe import escape
 
-# ---------- Paths (robust no matter the working dir) ----------
+# ───────────────────────────────────────────────────────────────────────────────
+# Paths (robust no matter the working directory)
+# ───────────────────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 
-# ---------- App / Socket.IO ----------
+# ───────────────────────────────────────────────────────────────────────────────
+# App / Socket.IO
+# ───────────────────────────────────────────────────────────────────────────────
 app = Flask(
     __name__,
     static_folder=str(STATIC_DIR),
     template_folder=str(TEMPLATES_DIR),
 )
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
-# If you scale to >1 instance, add a message_queue (e.g., Redis URL)
+
+# If you ever scale to multiple instances/workers, add a message queue (e.g. Redis)
+# socketio = SocketIO(app, cors_allowed_origins="*", message_queue=os.getenv("REDIS_URL"))
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# ---------- Simple moderator gate ----------
+# Simple moderator code (enter on login)
 MOD_CODE = os.environ.get("MOD_CODE", "letmein")
 
-# ---------- In-memory state (demo only) ----------
+# ───────────────────────────────────────────────────────────────────────────────
+# Minimal in-memory state (demo). Persist to DB in production.
+# ───────────────────────────────────────────────────────────────────────────────
 messages = []          # [{id, user, text, ts}]
 online_by_sid = {}     # sid -> {"username": str, "role": "user"|"mod"}
 sid_by_username = {}   # username -> sid
 
 
 def current_user():
-    uname = session.get("username")
-    role = session.get("role", "user")
-    return uname, role
+    return session.get("username"), session.get("role", "user")
 
 
 def next_msg_id():
     return f"m{len(messages)+1:06d}"
 
 
-# ---------- Routes ----------
+# ───────────────────────────────────────────────────────────────────────────────
+# Context: allow {{ now().year }} in templates
+# ───────────────────────────────────────────────────────────────────────────────
+@app.context_processor
+def inject_now():
+    # now() will be callable in templates: now().year
+    return {"now": datetime.utcnow}
+
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Top-level pages (all extend base.html)
+# ───────────────────────────────────────────────────────────────────────────────
 @app.route("/")
 def root():
+    # Land on login page by default
     return redirect(url_for("login"))
 
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        username = (request.form.get("username") or "").strip()
-        mod_code = (request.form.get("mod_code") or "").strip()
-        # gender is present in the form; capture if you want to store it
-        gender = (request.form.get("gender") or "").strip()
-
-        if not username:
-            return render_template("login.html", error="Username is required.")
-
-        role = "mod" if mod_code and mod_code == MOD_CODE else "user"
-        session["username"] = username
-        session["role"] = role
-        session["gender"] = gender
-        return redirect(url_for("chat"))
-
-    return render_template("login.html", error=None)
-
-
-@app.route("/chat")
-def chat():
-    uname, role = current_user()
-    if not uname:
-        return redirect(url_for("login"))
-    return render_template("chat.html", username=uname, role=role)
-
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
-# ----- Legal/static pages -----
-@app.route("/cookies")
-def cookies():
-    return render_template("cookies.html")
-
-@app.route("/privacy")
-def privacy():
-    return render_template("privacy.html")
-
-@app.route("/terms")
-def terms():
-    return render_template("terms.html")
-
-# ----- Service worker (so /sw.js resolves) -----
-@app.route("/sw.js")
-def sw():
-    # Make sure static/sw.js exists in your repo
-    return send_from_directory("static", "sw.js",
-                               mimetype="application/javascript")
-
-# (Optional) manifest at /manifest if any template links there
-@app.route("/manifest")
-def manifest():
-    # Make sure static/manifest.webmanifest exists if you keep this
-    return send_from_directory("static", "manifest.webmanifest",
-                               mimetype="application/manifest+json")
 @app.route("/landing")
 def landing():
     return render_template("landing.html")
@@ -127,7 +85,58 @@ def cookies():
     return render_template("cookies.html")
 
 
-# ---------- Socket.IO events ----------
+# ───────────────────────────────────────────────────────────────────────────────
+# PWA helpers (your base.html uses url_for('manifest') and registers /sw.js)
+# Place files at static/manifest.webmanifest and static/sw.js
+# ───────────────────────────────────────────────────────────────────────────────
+@app.route("/manifest")
+def manifest():
+    return send_from_directory("static", "manifest.webmanifest",
+                               mimetype="application/manifest+json")
+
+@app.route("/sw.js")
+def sw():
+    return send_from_directory("static", "sw.js",
+                               mimetype="application/javascript")
+
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Auth-ish (simple demo)
+# ───────────────────────────────────────────────────────────────────────────────
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = (request.form.get("username") or "").strip()
+        mod_code = (request.form.get("mod_code") or "").strip()
+        gender   = (request.form.get("gender") or "").strip()  # captured if you want to use it
+
+        if not username:
+            return render_template("login.html", error="Username is required.")
+
+        role = "mod" if mod_code and mod_code == MOD_CODE else "user"
+        session["username"] = username
+        session["role"] = role
+        session["gender"] = gender
+        return redirect(url_for("chat"))
+
+    return render_template("login.html", error=None)
+
+@app.route("/chat")
+def chat():
+    uname, role = current_user()
+    if not uname:
+        return redirect(url_for("login"))
+    return render_template("chat.html", username=uname, role=role)
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Socket.IO events
+# ───────────────────────────────────────────────────────────────────────────────
 @socketio.on("connect")
 def sio_connect():
     uname = session.get("username")
@@ -139,12 +148,11 @@ def sio_connect():
     online_by_sid[request.sid] = {"username": uname, "role": role}
     sid_by_username[uname] = request.sid
 
-    # Send recent history to this client
+    # Send the latest 100 messages to the new client
     emit("chat_history", messages[-100:])
 
-    # Broadcast updated roster (just usernames; JS handles both shapes)
+    # Broadcast updated roster; client code accepts either strings or objects
     emit("online", sorted(sid_by_username.keys()), broadcast=True)
-
 
 @socketio.on("disconnect")
 def sio_disconnect():
@@ -153,7 +161,6 @@ def sio_disconnect():
         uname = info["username"]
         sid_by_username.pop(uname, None)
         emit("online", sorted(sid_by_username.keys()), broadcast=True)
-
 
 @socketio.on("chat")
 def sio_chat(data):
@@ -172,7 +179,6 @@ def sio_chat(data):
     }
     messages.append(msg)
     emit("chat", msg, broadcast=True)
-
 
 @socketio.on("pm")
 def sio_pm(data):
@@ -195,9 +201,9 @@ def sio_pm(data):
         "text": escape(txt),
         "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
+    # to recipient + echo back to sender
     emit("pm", payload, to=target_sid)
-    emit("pm", payload)  # echo to sender
-
+    emit("pm", payload)
 
 @socketio.on("delete_message")
 def sio_delete_message(data):
@@ -215,7 +221,13 @@ def sio_delete_message(data):
         emit("message_deleted", {"id": mid}, broadcast=True)
 
 
-# ---------- Entrypoint ----------
+# ───────────────────────────────────────────────────────────────────────────────
+# Dev entrypoint; in production use gunicorn with gevent or gevent-websocket.
+# ───────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    # For local dev only. In Render use gunicorn with gevent or gevent-websocket.
+    # Local dev:
+    #   python app.py
+    # Production (Render → Start Command), pick ONE:
+    #   gunicorn -k gevent -w 1 app:app
+    #   gunicorn -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 app:app
     socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
