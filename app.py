@@ -215,8 +215,25 @@ def chat():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+@app.context_processor
+def inject_now():
+    return {"now": datetime.utcnow}
 
+@app.route("/")
+def landing():
+    return render_template("landing.html")
 
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+@app.route("/cookies")
+def cookies():
+    return render_template("cookies.html")
 # ------------------------------
 # Entrypoint (local dev)
 # ------------------------------
