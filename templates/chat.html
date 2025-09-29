@@ -109,7 +109,9 @@
     document.body.classList.add("agelock");
     gate.style.zIndex = "99999"; // make sure it's on top
   }
-
+{% include "_cookie_banner.html" %}
+</body>
+</html>
   enter.addEventListener("click", () => {
     setCookie(30);
     gate.style.display = "none";
