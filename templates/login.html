@@ -1,21 +1,13 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Login</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body class="login">
-  <div class="card">
-    <h1>Join Chat</h1>
-    {% if error %}
-      <div class="alert">{{ error }}</div>
-    {% endif %}
-    <body>
+<body style="background:#0d0d0d; font-family:sans-serif;">
 
-  <!-- Add branding + description above the form -->
+  <!-- 🔥 Branding + Description goes here -->
   <div style="text-align:center; color:white; padding:20px;">
     <h1 style="font-size:2em; margin-bottom:10px;">HotSinglesChat</h1>
     <p style="font-size:1.1em; max-width:500px; margin:0 auto 20px;">
@@ -26,45 +18,23 @@
     </p>
   </div>
 
-  <!-- Your original form -->
-  <form id="joinForm">
+  <!-- Your existing login form -->
+  <form id="joinForm" style="max-width:400px; margin:0 auto; color:white;">
     <label>Username</label>
-    <input type="text" name="username">
+    <input type="text" name="username" placeholder="Enter your username" style="width:100%; padding:8px; margin:6px 0;">
 
     <label>Moderator code (optional)</label>
-    <input type="text" name="modcode">
+    <input type="text" name="modcode" placeholder="Enter mod code if you have one" style="width:100%; padding:8px; margin:6px 0;">
 
     <label>Gender</label>
-    <select name="gender">
+    <select name="gender" style="width:100%; padding:8px; margin:6px 0;">
       <option>Female</option>
       <option>Male</option>
       <option>Other</option>
     </select>
 
-    <button type="submit">Enter</button>
+    <button type="submit" style="width:100%; padding:10px; margin-top:10px; background:#007bff; color:white; border:none; border-radius:5px;">Enter</button>
   </form>
 
-</body>
-    <form method="post" action="{{ url_for('login') }}">
-  <label>Username</label>
-  <input name="username" autocomplete="nickname" required>
-
-  <label>Moderator code <small>(optional)</small></label>
-  <input name="mod_code" placeholder="Enter mod code if you have one">
-
-  <!-- 👇 Add your gender select here -->
-  <label>Gender</label>
-  <select name="gender" required>
-    <option value="female">Female</option>
-    <option value="male">Male</option>
-    <option value="nonbinary">Non-binary</option>
-    <option value="trans">Trans</option>
-    <option value="other">Other</option>
-    <option value="hidden">Prefer not to say</option>
-  </select>
-
-  <button type="submit">Enter</button>
-    </form>
-  </div>
 </body>
 </html>
