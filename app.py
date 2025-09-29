@@ -90,19 +90,17 @@ def sio_pm(data):
     emit("pm", payload, to=request.sid)
     
 @socketio.on("connect")
-def sio_connect(auth=None):   # <— make auth optional
-    username = session.get("username","Anon")
-role = session.get("role","user")
-gender = session.get("gender","hidden")
-online_by_sid[request.sid] = {"username": username, "role": role, "gender": gender}
-    
+def sio_connect(auth=None):  # ← inside this function
+    username = session.get("username", "Anon")
+    role = session.get("role", "user")
+    gender = session.get("gender", "hidden")
+    online_by_sid[request.sid] = {"username": username, "role": role, "gender": gender}
 
     # update roster for everyone
     push_online(include_self=True)
 
     # send chat history just to this new client
     socketio.emit("chat_history", messages, to=request.sid)
-
 
 @socketio.on("disconnect")
 def sio_disconnect():    # disconnect takes NO args
