@@ -1,63 +1,79 @@
 <!doctype html>
 <html lang="en">
 <head>
-  
-<meta name="juicyads-site-verification" content="3a2230dfb5fd4e823902e42403b11f9a
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264"
-     crossorigin="anonymous"></script>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264"
-     crossorigin="anonymous"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Login</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Site verification (FIXED) -->
+  <meta name="juicyads-site-verification" content="3a2230dfb5fd4e823902e42403b11f9a">
+
   <link rel="manifest" href="{{ url_for('manifest') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="theme-color" content="#0d0d0d">
 </head>
-<body class="login">
-  <div class="card">
-  
+<body class="login" style="background:#0d0d0d; font-family:sans-serif;">
+
+  <div class="card" style="max-width:560px;margin:48px auto;padding:24px;background:#131313;border-radius:12px;color:#fff;">
     {% if error %}
-      <div class="alert">{{ error }}</div>
+      <div class="alert" role="alert" style="background:#2a1010;border:1px solid #6b1d1d;padding:12px;border-radius:8px;margin-bottom:16px;">
+        {{ error }}
+      </div>
     {% endif %}
 
-    <body style="background:#0d0d0d; font-family:sans-serif;">
-  
-  <!-- 🔥 Branding + Description goes here -->
-  <div style="text-align:center; color:white; padding:20px;">
-    <h1 style="font-size:2em; margin-bottom:10px;">Hot Singles Chat</h1>
-    <p style="font-size:1.1em; max-width:500px; margin:0 auto 20px;">
-      Meet, connect, and chat live with singles near you and around the world. 
-      Welcome to <b>Hot Singles Chat</b> — the place where real people come 
-      together for fun conversations, flirty connections, and maybe even more. 
-      Choose your username below and Join the chat!
-    <form method="post" action="{{ url_for('login') }}">
-  <label>Username</label>
-  <input name="username" autocomplete="nickname" required>
+    <!-- Branding + description -->
+    <div style="text-align:center; padding:8px 12px 20px;">
+      <h1 style="font-size:2rem; margin:0 0 10px;">Hot Singles Chat</h1>
+      <p style="font-size:1.05rem; line-height:1.5; max-width:520px; margin:0 auto;">
+        Meet, connect, and chat live with singles near you and around the world.
+        Welcome to <b>Hot Singles Chat</b> — the place where real people come together
+        for fun conversations, flirty connections, and maybe even more.
+        Choose your username below and join the chat!
+      </p>
+    </div>
 
-  <label>Moderator code <small>(optional)</small></label>
-  <input name="mod_code" placeholder="Enter mod code if you have one">
+    <!-- Login form -->
+    <form method="post" action="{{ url_for('login') }}" style="display:grid; gap:12px; margin-top:16px;">
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="nickname" required
+             placeholder="Enter a display name"
+             style="padding:.6rem;border-radius:.5rem;border:1px solid #333;background:#0b0b0b;color:#fff;">
 
-  <!-- 👇 Add your gender select here -->
-  <label>Gender</label>
-  <select name="gender" required>
-    <option value="female">Female</option>
-    <option value="male">Male</option>
-    <option value="nonbinary">Non-binary</option>
-    <option value="trans">Trans</option>
-    <option value="other">Other</option>
-    <option value="hidden">Prefer not to say</option>
-  </select>
+      <div>
+        <label for="mod_code">Moderator code <small>(optional)</small></label>
+        <input id="mod_code" name="mod_code" placeholder="Enter mod code if you have one"
+               style="width:100%;padding:.6rem;border-radius:.5rem;border:1px solid #333;background:#0b0b0b;color:#fff;">
+      </div>
 
-  <button type="submit">Enter</button>
-      {% include "_cookie_banner.html" %}
-</body>
-    </html>
+      <div>
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender" required
+                style="width:100%;padding:.6rem;border-radius:.5rem;border:1px solid #333;background:#0b0b0b;color:#fff;">
+          <option value="" disabled selected>Select your gender</option>
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+          <option value="nonbinary">Non-binary</option>
+          <option value="trans">Trans</option>
+          <option value="other">Other</option>
+          <option value="hidden">Prefer not to say</option>
+        </select>
+      </div>
+
+      <button type="submit"
+              style="padding:.7rem 1rem;border-radius:.6rem;border:0;background:#2563eb;color:#fff;cursor:pointer;">
+        Enter
+      </button>
     </form>
   </div>
-<!-- JuicyAds v3.0 -->
-<script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-<ins id="1102384" data-width="133" data-height="139"></ins>
-<script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1102384});</script>
-<!--JuicyAds END-->
+
+  <!-- Optional: Cookie banner belongs OUTSIDE the form -->
+  {% include "_cookie_banner.html" %}
+
+  <!-- JuicyAds v3.0 (optional on login) -->
+  <script data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
+  <ins id="1102384" data-width="133" data-height="139"></ins>
+  <script data-cfasync="false" async>
+    (adsbyjuicy = window.adsbyjuicy || []).push({ adzone: 1102384 });
+  </script>
 </body>
-</html>
+  </html>
