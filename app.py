@@ -1,4 +1,11 @@
+python - <<'PY'
 import os
+from pathlib import Path
+from app import app, TEMPLATES_DIR
+print("Template folder:", app.template_folder)
+print("Exists:", Path(app.template_folder).exists())
+print("Contains:", [p.name for p in Path(app.template_folder).iterdir()])
+PY
 from datetime import datetime
 from flask import (
     Flask, render_template, request, redirect,
