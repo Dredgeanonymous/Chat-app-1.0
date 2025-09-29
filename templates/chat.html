@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Chat</title>
 
-  <!-- Site verification (FIXED) -->
+  <!-- Site verification -->
   <meta name="juicyads-site-verification" content="3a2230dfb5fd4e823902e42403b11f9a">
 
   <!-- Theme / manifest / styles -->
@@ -14,9 +14,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <!-- Optional: lock body when gate shown -->
-  <style>
-    .agelock { overflow: hidden; }
-  </style>
+  <style>.agelock{overflow:hidden}</style>
 
   <!-- Font Awesome -->
   <link rel="stylesheet"
@@ -54,26 +52,26 @@
   </main>
 
   <!-- JuicyAds v3.0 (IN BODY) -->
-  <script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
+  <script data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
   <ins id="1102384" data-width="133" data-height="139"></ins>
-  <script type="text/javascript" data-cfasync="false" async>
+  <script data-cfasync="false" async>
     (adsbyjuicy = window.adsbyjuicy || []).push({ adzone: 1102384 });
   </script>
 
   <ins id="1102385" data-width="474" data-height="190"></ins>
-  <script type="text/javascript" data-cfasync="false" async>
+  <script data-cfasync="false" async>
     (adsbyjuicy = window.adsbyjuicy || []).push({ adzone: 1102385 });
   </script>
   <!-- JuicyAds END -->
 
   <!-- Infolinks -->
-  <script type="text/javascript">var infolinks_pid = 3440424; var infolinks_wsid = 0;</script>
-  <script type="text/javascript" src="//resources.infolinks.com/js/infolinks_main.js"></script>
+  <script>var infolinks_pid = 3440424; var infolinks_wsid = 0;</script>
+  <script src="//resources.infolinks.com/js/infolinks_main.js"></script>
 
   <!-- Socket.IO client -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
 
-  <!-- Expose role to chat.js for the mod delete button -->
+  <!-- Make role visible to chat.js -->
   <script>
     window.ROLE = document.body.dataset.role || 'user';
   </script>
@@ -89,4 +87,58 @@
   </script>
 
   <!-- Age Gate -->
-  <div id="age-gate" style="position:fixed;inset:0;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;z-index:999
+  <div id="age-gate" style="position:fixed;inset:0;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;z-index:99999;">
+    <div style="max-width:520px;text-align:center;padding:24px;">
+      <h2>Adults Only (18+)</h2>
+      <p>This site may display adult advertising. By entering, you confirm you are 18+ and consent to cookies.</p>
+      <button id="enterBtn" type="button" style="padding:.6rem 1rem;border-radius:.5rem;background:#2563eb;color:#fff;border:0;">Enter</button>
+      <noscript style="display:block;margin-top:12px;color:#ffb4b4;">
+        JavaScript is required to enter this site.
+      </noscript>
+    </div>
+  </div>
+
+  <script data-cfasync="false">
+  document.addEventListener('DOMContentLoaded', function () {
+    const KEY  = 'age_ok';
+    const gate = document.getElementById('age-gate');
+    const btn  = document.getElementById('enterBtn');
+
+    function hasConsent() {
+      const inStorage = localStorage.getItem(KEY) === '1';
+      const inCookie  = document.cookie.split(';').some(c => c.trim().startsWith(KEY + '='));
+      return inStorage || inCookie;
+    }
+    function setConsent(days = 30) {
+      const maxAge = 60*60*24*days;
+      // host-only
+      document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
+      // parent-domain
+      const host = location.hostname.split('.');
+      if (host.length >= 2) {
+        const root = '.' + host.slice(-2).join('.');
+        document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; Domain=${root}; SameSite=Lax`;
+      }
+      try { localStorage.setItem(KEY, '1'); } catch(_) {}
+    }
+
+    if (hasConsent()) {
+      gate.style.display = 'none';
+      document.body.classList.remove('agelock');
+    } else {
+      gate.style.display = 'flex';
+      document.body.classList.add('agelock');
+    }
+
+    btn?.addEventListener('click', () => {
+      setConsent(30);
+      gate.style.display = 'none';
+      document.body.classList.remove('agelock');
+      setTimeout(() => {
+        if (!hasConsent()) location.reload();
+      }, 50);
+    });
+  });
+  </script>
+</body>
+  </html>
