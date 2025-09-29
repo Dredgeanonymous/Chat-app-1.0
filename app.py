@@ -6,8 +6,9 @@ from pathlib import Path
 
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session
+    url_for, session, send_from_directory   # ← add this
 )
+
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
 from markupsafe import escape
 
