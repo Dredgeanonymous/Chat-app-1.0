@@ -10,7 +10,8 @@
 
   <!-- Theme / manifest / styles -->
   <meta name="theme-color" content="#111111">
-  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <!-- Use static endpoint so no custom Flask route is needed -->
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <!-- Optional: lock body when gate shown -->
@@ -25,7 +26,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js"
           crossorigin="anonymous"></script>
 
-  <!-- Google AdSense (load once) -->
+  <!-- Google AdSense (optional; you can remove if not using an ad slot) -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264"
           crossorigin="anonymous"></script>
 </head>
@@ -51,15 +52,11 @@
     </section>
   </main>
 
-  <!-- JuicyAds v3.0 (IN BODY) -->
- <ins id="1102385" data-width="800" data-height="100"></ins>
-  <script data-cfasync="false" async>
-    (adsbyjuicy = window.adsbyjuicy || []).push({ adzone: 1102385 });
-  </script>
-
+  <!-- JuicyAds (load script ONCE, then push ONE zone) -->
+  <script data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
   <ins id="1102385" data-width="800" data-height="100"></ins>
   <script data-cfasync="false" async>
-    (adsbyjuicy = window.adsbyjuicy || []).push({ adzone: 1102385 });
+    (window.adsbyjuicy = window.adsbyjuicy || []).push({ adzone: 1102385 });
   </script>
   <!-- JuicyAds END -->
 
@@ -78,10 +75,10 @@
   <!-- Your chat.js -->
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
 
-  <!-- Service worker -->
+  <!-- Service worker (serve from /static; no custom route needed) -->
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('{{ url_for("sw") }}').catch(()=>{});
+      navigator.serviceWorker.register('{{ url_for("static", filename="sw.js") }}').catch(()=>{});
     }
   </script>
 
@@ -110,9 +107,7 @@
     }
     function setConsent(days = 30) {
       const maxAge = 60*60*24*days;
-      // host-only
       document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
-      // parent-domain
       const host = location.hostname.split('.');
       if (host.length >= 2) {
         const root = '.' + host.slice(-2).join('.');
@@ -139,11 +134,5 @@
     });
   });
   </script>
-  .<!-- JuicyAds v3.0 -->
-<script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-<ins id="1102385" data-width="474" data-height="190"></ins>
-<script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1102385});</script>
-<!--JuicyAds END-->
- 
 </body>
   </html>
