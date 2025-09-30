@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <!-- Manifest -->
-  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <link rel="manifest" href="{{ url_for('manifest.json.') }}">
 
   <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register("{{ url_for('service_worker') }}");
+      navigator.serviceWorker.register("{{ url_for('sw') }}");
     }
   </script>
 
