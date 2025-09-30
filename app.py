@@ -125,8 +125,7 @@ def logout():
 # ================= Socket.IO events =================
 
 # 1) Roster
-def broadcast_roster():
-        ...
+def broadcast_roster()
     socketio.emit("online", roster, broadcast=True)
     socketio.emit("online", roster)
 
@@ -145,14 +144,12 @@ def sio_typing(data):
 # 3) New chat messages
 @socketio.on("chat")
 def sio_chat(data):
-        ...
     emit("chat", msg, broadcast=True)
     socketio.emit("chat", msg)
     
 # 4) Private messages (keep direct send, echo to sender explicitly)
 @socketio.on("pm")
 def sio_pm(data):
-            ...  
     emit("pm", payload, to=target_sid)
     emit("pm", payload)
     socketio.emit("pm", payload, to=target_sid)
@@ -161,9 +158,9 @@ def sio_pm(data):
 # 5) Delete message broadcast
 @socketio.on("delete_message")
 def sio_delete_message(data):
-        ...
     emit("message_deleted", {"id": mid}, broadcast=True)
     socketio.emit("message_deleted", {"id": mid})
+    
 @socketio.on("connect")
 def sio_connect():
     uname = session.get("username")
