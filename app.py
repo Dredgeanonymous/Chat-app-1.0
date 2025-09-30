@@ -102,7 +102,7 @@ def assetlinks():
 # PWA helpers (your base.html uses url_for('manifest') and registers /sw.js)
 # Place files at static/manifest.webmanifest and static/sw.js
 # ───────────────────────────────────────────────────────────────────────────────
-@app.route("/static/manifest.json")
+@app.route("/manifest")
 def manifest():
     return send_from_directory("static", "manifest.webmanifest",
                                mimetype="application/manifest+json")
