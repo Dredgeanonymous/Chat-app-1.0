@@ -1,53 +1,5 @@
-document.getElementById('backToChat').addEventListener('click', function() {
-  // Clear DM mode
-  window.pmTo = null;
-  // Reset the input placeholder
-  document.getElementById('msgInput').placeholder = "Type a message";
-  // Hide the back button
-  this.style.display = 'none';
+
 });
-function reactionStripHTML(m){
-  // render reaction buttons + counts
-  const rx = m.reactions || {};
-  const parts = REACTION_SET.map(em => {
-    const count = (rx[em] && rx[em].length) || 0;
-    const badge = count ? `<span class="rx-count">${count}</span>` : "";
-    return `<button class="rx-btn" data-id="${m.id}" data-em="${em}" title="React ${em}">${em}${badge}</button>`;
-  });
-  return `<div class="reactions">${parts.join("")}</div>`;
-}
-
-function renderMessage(m){
-  const atBottom = shouldAutoScroll(list);
-
-  const id   = m.id;
-  const who  = m.user || m.username || "Anon";
-  const text = linkify(m.text || "");
-  const ts   = formatTS(m.ts);
-
-  const li = document.createElement("li");
-  li.dataset.id = id;
-  li.innerHTML = `
-    <div class="msg-row">
-      ${renderAvatar(m.avatar, who)}
-      <strong>${who}</strong>
-      <span class="msg-time" title="${m.ts}">${ts}</span>
-      ${ROLE === "mod" ? `
-        <button class="mini danger msg-del" title="Delete" data-id="${id}">✖</button>
-      ` : ""}
-    </div>
-    <div class="msg-text">${text}</div>
-    ${reactionStripHTML(m)}
-  `;
-
-  // copy on double-click
-  li.addEventListener("dblclick", () => {
-    navigator.clipboard?.writeText(m.text || "").catch(()=>{});
-  });
-
-  list.appendChild(li);
-  if (atBottom) doScroll(list);
-      }
 
 function hashColor(name) {
   // tiny stable color from name
@@ -120,6 +72,22 @@ function renderAvatar(avatarUrl, username) {
   let pmTo = null;
   function startPM(username){
     const backBtn = document.getElementById("backToChat");
+
+function startPM(username) {
+  pmTo = username;
+  if (msgInput) {
+    msgInput.placeholder = `DM to ${username}…`;
+    msgInput.focus();
+  }
+  // show back button
+  backBtn.style.display = "inline-block";
+}
+
+backBtn?.addEventListener("click", () => {
+  pmTo = null;
+  if (msgInput) msgInput.placeholder = "Type a message";
+  backBtn.style.display = "none"; // hide button again
+});
 
 function startPM(username) {
   pmTo = username;
@@ -225,34 +193,49 @@ backBtn?.addEventListener("click", () => {
   });
 
   // ---------- Message renderer (polished)
-  function renderMessage(m){
-    const atBottom = shouldAutoScroll(list);
+  ;
+function reactionStripHTML(m){
+  // render reaction buttons + counts
+  const rx = m.reactions || {};
+  const parts = REACTION_SET.map(em => {
+    const count = (rx[em] && rx[em].length) || 0;
+    const badge = count ? `<span class="rx-count">${count}</span>` : "";
+    return `<button class="rx-btn" data-id="${m.id}" data-em="${em}" title="React ${em}">${em}${badge}</button>`;
+  });
+  return `<div class="reactions">${parts.join("")}</div>`;
+}
 
-    const id   = m.id;
-    const who  = m.user || m.username || "Anon";
-    const text = linkify(m.text || "");
-    const ts   = formatTS(m.ts);
+function renderMessage(m){
+  const atBottom = shouldAutoScroll(list);
 
-    const li = document.createElement("li");
-    li.dataset.id = id;
-    li.innerHTML = `
-      <div class="msg-row">
-        <strong>${who}</strong>
-        <span class="msg-time" title="${m.ts}">${ts}</span>
-        ${ROLE === "mod" ? `
-          <button class="mini danger msg-del" title="Delete" data-id="${id}">✖</button>
-        ` : ""}
-      </div>
-      <div class="msg-text">${text}</div>
-    `;
-    // copy on double-click
-    li.addEventListener("dblclick", () => {
-      navigator.clipboard?.writeText(m.text || "").catch(()=>{});
-    });
+  const id   = m.id;
+  const who  = m.user || m.username || "Anon";
+  const text = linkify(m.text || "");
+  const ts   = formatTS(m.ts);
 
-    list.appendChild(li);
-    if (atBottom) doScroll(list);
-  }
+  const li = document.createElement("li");
+  li.dataset.id = id;
+  li.innerHTML = `
+    <div class="msg-row">
+      ${renderAvatar(m.avatar, who)}
+      <strong>${who}</strong>
+      <span class="msg-time" title="${m.ts}">${ts}</span>
+      ${ROLE === "mod" ? `
+        <button class="mini danger msg-del" title="Delete" data-id="${id}">✖</button>
+      ` : ""}
+    </div>
+    <div class="msg-text">${text}</div>
+    ${reactionStripHTML(m)}
+  `;
+
+  // copy on double-click
+  li.addEventListener("dblclick", () => {
+    navigator.clipboard?.writeText(m.text || "").catch(()=>{});
+  });
+
+  list.appendChild(li);
+  if (atBottom) doScroll(list);
+}
 
   // ---------- Safer submit (debounce + disable)
   const submitBtn = form?.querySelector('button[type="submit"]');
