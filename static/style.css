@@ -95,3 +95,28 @@
   .users { max-height: initial; }
   .messages { height: auto; max-height: 60vh; }
 }
+/* Avatars */
+.avatar {
+  width:28px; height:28px; border-radius:50%; object-fit:cover; display:inline-block; margin-right:8px;
+  border:1px solid rgba(255,255,255,.15);
+}
+.theme-light .avatar { border-color: rgba(0,0,0,.1); }
+.avatar-fallback {
+  width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+  color:#fff; font-weight:700; font-size:.85rem; margin-right:8px;
+}
+
+/* Reactions bar */
+.reactions { display:flex; gap:8px; padding-top:6px; }
+.rx-btn {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:2px 6px; border-radius:999px; border:1px solid #273244;
+  background:#0b0f1a; color:#eaeaea; cursor:pointer; font-size:.9rem;
+}
+.theme-light .rx-btn { background:#fff; border-color:#cbd5e1; color:#0e141b; }
+.rx-btn:hover { filter:brightness(1.1); }
+.rx-count {
+  display:inline-block; min-width:18px; height:18px; border-radius:9px;
+  background:#1f2937; color:#fff; font-size:.76rem; line-height:18px; text-align:center; padding:0 4px;
+}
+.theme-light .rx-count { background:#e5e7eb; color:#0e141b; }
