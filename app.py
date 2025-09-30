@@ -8,7 +8,7 @@ from flask import (
     Flask, render_template, request, redirect,
     url_for, session, send_from_directory
 )
-from flask_socketio import SocketIO, emit, disconnect
+from flask_socketio import SocketIO, emit
 from markupsafe import escape
 
 # ----- Paths -----
@@ -195,4 +195,17 @@ def sio_pm(data):
 
 @socketio.on("delete_message")
 def sio_delete_message(data):
-    if session.get("role")
+    if session.get("role") != "mod":
+        return
+    mid = (data or {}).get("id")
+    if not mid:
+        return
+    for i, m in enumerate(messages):
+        if m["id"] == mid:
+            messages.pop(i)
+            emit("message_deleted", {"id": mid}, broadcast=True)
+            break
+
+# ----- Entrypoint -----
+if __name__ == "__main__":
+    socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
