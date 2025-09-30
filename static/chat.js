@@ -111,6 +111,23 @@ function renderAvatar(avatarUrl, username) {
   // ---------- DM helpers ----------
   let pmTo = null;
   function startPM(username){
+    const backBtn = document.getElementById("backToChat");
+
+function startPM(username) {
+  pmTo = username;
+  if (msgInput) {
+    msgInput.placeholder = `DM to ${username}…`;
+    msgInput.focus();
+  }
+  // show back button
+  backBtn.style.display = "inline-block";
+}
+
+backBtn?.addEventListener("click", () => {
+  pmTo = null;
+  if (msgInput) msgInput.placeholder = "Type a message";
+  backBtn.style.display = "none"; // hide button again
+});
     pmTo = username;
     if (msgInput) {
       msgInput.placeholder = `DM to ${username}…`;
