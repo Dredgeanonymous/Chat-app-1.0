@@ -79,7 +79,7 @@ def landing():
 @app.route("/privacy")
 def privacy():
     return render_template("privacy.html")
-@app.route('/manifest.json')
+@app.route('/static/manifest.json')
 def manifest_file():
     return send_from_directory('static', 'manifest.json', mimetype='application/json')
     
@@ -149,7 +149,7 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-@app.route('/.well-known/assetlinks.json')
+@app.route('/static/.well-known/assetlinks.json')
 def assetlinks_file():
     return send_from_directory('static/.well-known', 'assetlinks.json', mimetype='application/json')
 
