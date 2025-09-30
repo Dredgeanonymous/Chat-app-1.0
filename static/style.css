@@ -1,9 +1,5 @@
 
-body.site.theme-dark {
-  background: url("{{ url_for('static', filename='bg.jpg') }}") no-repeat center center fixed;
-  background-size: cover;
-  color: #fff; /* make sure text stays readable */
-}
+
 /* ====== Theme ====== */
 .site.theme-dark { background:#0d0d0d; color:#eaeaea; }
 .site.theme-light { background:#f7f7f8; color:#0e141b; }
