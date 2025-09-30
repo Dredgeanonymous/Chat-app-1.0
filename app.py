@@ -136,7 +136,7 @@ def sio_typing(data):
     uname = session.get("username")
     if not uname:
         return
-  emit("typing", {"user": uname, "typing": bool((data or {}).get("typing"))}, broadcast=True, include_self=False)
+    emit("typing", {"user": uname, "typing": bool((data or {}).get("typing"))}, broadcast=True, include_self=False)
     socketio.emit(
       "typing",
       {"user": uname, "typing": bool((data or {}).get("typing"))},
@@ -146,23 +146,23 @@ def sio_typing(data):
 @socketio.on("chat")
 def sio_chat(data):
     ...
-   emit("chat", msg, broadcast=True)
-   socketio.emit("chat", msg)
-
+    emit("chat", msg, broadcast=True)
+    socketio.emit("chat", msg)
+    
 # 4) Private messages (keep direct send, echo to sender explicitly)
 @socketio.on("pm")
 def sio_pm(data):
     ...
-  emit("pm", payload, to=target_sid)
-  emit("pm", payload)
-   socketio.emit("pm", payload, to=target_sid)
-   socketio.emit("pm", payload, to=request.sid)
+     emit("pm", payload, to=target_sid)
+     emit("pm", payload)
+     socketio.emit("pm", payload, to=target_sid)
+     socketio.emit("pm", payload, to=request.sid)
 
 # 5) Delete message broadcast
 @socketio.on("delete_message")
 def sio_delete_message(data):
     ...
-   emit("message_deleted", {"id": mid}, broadcast=True)
+    emit("message_deleted", {"id": mid}, broadcast=True)
     socketio.emit("message_deleted", {"id": mid})
 @socketio.on("connect")
 def sio_connect():
