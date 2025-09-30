@@ -153,6 +153,12 @@ def broadcast_roster():
         })
     roster.sort(key=lambda r: (r["username"] or "").lower())
     socketio.emit("online", roster, broadcast=True)
+@socketio.on("typing")
+def sio_typing(data):
+    uname = session.get("username")
+    if not uname:
+        return
+    emit("typing", {"user": uname, "typing": bool((data or {}).get("typing"))}, broadcast=True, include_self=False)
 
 @socketio.on("connect")
 def sio_connect(auth):
