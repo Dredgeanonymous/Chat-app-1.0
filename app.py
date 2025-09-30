@@ -52,4 +52,4 @@ def login():
         if not username:
             return render_template("login.html", error="Username is required.")
 
-        role = "mod" if mod_code and mod_code == MOD_CODE
+        role = "mod" if (mod_code and mod_code == MOD_CODE) else "user"
