@@ -314,15 +314,21 @@ socket.on("reaction_update", ({ id, emoji, count }) => {
       const name    = isObj ? (u.username || u.user || "Anon") : (u || "Anon");
       const role    = isObj ? (u.role || "user") : "user";
       const gender  = isObj ? (u.gender || "") : "";
-
+      const avatar = isObj ? (u.avatar || "") : "";
       if (!name) return;
 
       const li = document.createElement("li");
       li.innerHTML = `
-        <span class="user-name"><i class="fa-solid fa-circle-user"></i> ${name}</span>
-        ${modBadge(role)}
-        ${gender ? `<span class="g">${genderIcon(gender)} <small>${gender}</small></span>` : ""}
-      `;
+     ${renderAvatar(avatar, name)}
+     <span class="user-name">${name}</span>
+     ${modBadge(role)}
+     ${gender ? `<span class="g">${genderIcon(gender)} <small>${gender}</small></span>` : ""}
+`;
+
+
+
+
+
       li.addEventListener("click", () => startPM(name));
       usersEl.appendChild(li);
     });
