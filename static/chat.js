@@ -1,24 +1,13 @@
-// --- add near the top of chat.js ---
 function formatTS(ts) {
-  // supports ISO strings or unix seconds/ms
-  let d;
-  if (typeof ts === "number") {
-    d = new Date(ts < 2e10 ? ts * 1000 : ts); // seconds vs ms
-  } else {
-    d = new Date(ts);
-  }
-  if (isNaN(d)) return ""; // fall back if something odd
-  return d.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
+  let d = new Date(ts);
+  if (isNaN(d)) return "";
+  return d.toLocaleString("en-US", {
+    timeZone: "America/New_York",  // pick one US timezone
+    year: "numeric", month: "short", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
     hour12: true
   });
 }
-
 // static/chat.js  — robust socket + roster + mod delete + gender icons
 
 (function () {
