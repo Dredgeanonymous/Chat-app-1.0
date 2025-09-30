@@ -263,6 +263,33 @@ function renderAvatar(avatarUrl, username) {
   });
 
   // ---------- Delete (mods)
+  // Click-to-react / toggle
+list?.addEventListener("click", (e) => {
+  const btn = e.target.closest(".rx-btn");
+  if (!btn) return;
+  const id = btn.getAttribute("data-id");
+  const em = btn.getAttribute("data-em");
+  if (id && em) socket.emit("react", { id, emoji: em });
+});
+
+// Server broadcasts minimal updates
+socket.on("reaction_update", ({ id, emoji, count }) => {
+  const li = document.querySelector(`li[data-id="${id}"]`);
+  if (!li) return;
+  const btn = li.querySelector(`.rx-btn[data-em="${emoji}"]`);
+  if (!btn) return;
+
+  let badge = btn.querySelector(".rx-count");
+  if (!badge && count) {
+    badge = document.createElement("span");
+    badge.className = "rx-count";
+    btn.appendChild(badge);
+  }
+  if (badge) {
+    if (count) badge.textContent = count;
+    else badge.remove();
+  }
+});
   list?.addEventListener("click", (e) => {
     const btn = e.target.closest(".msg-del");
     if (!btn) return;
