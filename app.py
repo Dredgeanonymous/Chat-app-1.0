@@ -3,7 +3,7 @@
 import os
 from datetime import datetime
 from pathlib import Path
-
+from flask_socketio import SocketIO, emit, disconnect, request  # <-- include request here
 from flask import (
     Flask, render_template, request, redirect,
     url_for, session, send_from_directory
@@ -30,8 +30,12 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 
 # If you ever scale to multiple instances/workers, add a message queue (e.g. Redis)
 # socketio = SocketIO(app, cors_allowed_origins="*", message_queue=os.getenv("REDIS_URL"))
-socketio = SocketIO(app, cors_allowed_origins="*")
-
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    ping_interval=25,
+    ping_timeout=70,
+)
 # Simple moderator code (enter on login)
 MOD_CODE = os.environ.get("MOD_CODE", "letmein")
 
