@@ -150,10 +150,6 @@ def assetlinks_file():
     return send_from_directory('static/.well-known', 'assetlinks.json', mimetype='application/json')
 
 
-@app.route('/manifest')
-def manifest_file():
-    return send_from_directory('static', 'manifest.json', mimetype='application/json')
-
 # ───────────────────────────────────────────────────────────────────────────────
 # Socket.IO events
 # ───────────────────────────────────────────────────────────────────────────────
