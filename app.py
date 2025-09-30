@@ -84,7 +84,7 @@ def privacy():
 def terms():
     return render_template("terms.html")
 
-@app.routen("/cookies")
+@app.route("/cookies")
 def cookies():
     return render_template("cookies.html")
     
