@@ -1,24 +1,21 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="manifest" href="{{ url_for('manifest') }}">
+  <link rel="manifest" href="{{ url_for('manifest_json') }}">
   <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/static/sw.js');
-}
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js');
+    }
   </script>
-  <link rel="manifest" href="/static/manifest.json">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{% block title %}Hot Singles Chat{% endblock %}</title>
 
   <meta name="theme-color" content="#111111">
   <meta name="description" content="Live chat with singles. Real people, real time.">
-  <link rel="manifest" href="{{ url_for('manifest') }}">
   <link rel="icon" href="{{ url_for('static', filename='icon.png') }}">
 
   <!-- Styles -->
-  
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <!-- Icons -->
@@ -53,7 +50,7 @@ if ('serviceWorker' in navigator) {
   {% block content %}{% endblock %}
 
   <footer class="site-footer">
-    <p>© {{  now().year if now else '' }} HotSinglesChat •
+    <p>© {{ now().year if now else '' }} HotSinglesChat •
        <a href="{{ url_for('privacy') }}">Privacy</a> •
        <a href="{{ url_for('terms') }}">Terms</a> •
        <a href="{{ url_for('cookies') }}">Cookies</a>
@@ -98,12 +95,6 @@ if ('serviceWorker' in navigator) {
     })();
   </script>
 
-  <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/sw.js');
-  }
-  </script>
-
   {% block extra_scripts %}{% endblock %}
 </body>
-  </html>
+</html>
