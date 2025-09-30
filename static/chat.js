@@ -2,7 +2,7 @@ function formatTS(ts) {
   let d = new Date(ts);
   if (isNaN(d)) return "";
   return d.toLocaleString("en-US", {
-    timeZone: "America/New_York",  // pick one US timezone
+   // pick one US timezone
     year: "numeric", month: "short", day: "2-digit",
     hour: "2-digit", minute: "2-digit", second: "2-digit",
     hour12: true
