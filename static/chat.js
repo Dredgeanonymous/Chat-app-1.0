@@ -1,26 +1,37 @@
-function formatTS(ts) {
-  let d = new Date(ts);
-  if (isNaN(d)) return "";
-  return d.toLocaleString("en-US", {
-   // pick one US timezone
-    year: "numeric", month: "short", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
-    hour12: true
-  });
-}
-// static/chat.js  — robust socket + roster + mod delete + gender icons
+// static/chat.js — polished UI/UX + stable socket + gender icons + MOD delete
 
 (function () {
-  // ---------- Connection (stable) ----------
-  const socket = io({
-    transports: ["websocket", "polling"],
-    upgrade: true
-  });
+  // ---------- Helpers (UX polish) ----------
+  function formatTS(ts) {
+    let d = new Date(ts);
+    if (isNaN(d)) return "";
+    return d.toLocaleString("en-US", {
+      timeZone: "America/New_York", // lock to Eastern Time
+      year: "numeric", month: "short", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: true
+    });
+  }
+  function linkify(text) {
+    const urlRe = /\b(https?:\/\/[^\s]+)\b/gi;
+    return (text || "").replace(urlRe, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+  }
+  function shouldAutoScroll(container) {
+    const threshold = 60; // px from bottom
+    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+  }
+  function doScroll(container) {
+    container.scrollTop = container.scrollHeight;
+  }
 
-  // Role detection (works whether window.ROLE or body dataset is set first)
+  // ---------- Connection (stable) ----------
+  const socket = io({ transports: ["websocket", "polling"], upgrade: true });
+
+  // Role detection (works if set on body or window)
   const BODY_ROLE = (document.body && document.body.dataset && document.body.dataset.role) || "";
   const ROLE = (String(window.ROLE || BODY_ROLE || "user")).toLowerCase(); // "mod" shows delete buttons
 
+  // DOM references
   const form     = document.getElementById("sendForm");
   const msgInput = document.getElementById("msgInput");
   const list     = document.getElementById("messages");
@@ -28,8 +39,7 @@ function formatTS(ts) {
 
   socket.on("connect", () => {
     console.log("SOCKET CONNECTED", socket.id);
-    // Ask the server for the roster every (re)connect — prevents empty list after hiccups
-    socket.emit("roster_request");
+    socket.emit("roster_request"); // fetch who’s online right away
   });
   socket.on("reconnect", () => {
     console.log("SOCKET RECONNECTED");
@@ -102,34 +112,77 @@ function formatTS(ts) {
       : "";
   }
 
-  // ---------- Message renderer ----------
+  // ---------- Typing indicator (polish) ----------
+  const typingEl = document.createElement("div");
+  typingEl.style.cssText = "padding:6px 12px;color:#94a3b8;font-size:12px;";
+  document.querySelector(".panel:last-of-type")?.appendChild(typingEl);
+
+  let othersTyping = new Set();
+  let typingTimer = null;
+
+  function updateTyping() {
+    if (othersTyping.size) {
+      typingEl.textContent = `${Array.from(othersTyping).slice(0,3).join(", ")} typing…`;
+    } else {
+      typingEl.textContent = "";
+    }
+  }
+
+  msgInput?.addEventListener("input", () => {
+    socket.emit("typing", { typing: !!msgInput.value.trim() });
+  });
+
+  socket.on("typing", ({ user, typing }) => {
+    if (!user) return;
+    if (typing) othersTyping.add(user); else othersTyping.delete(user);
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => { othersTyping.clear(); updateTyping(); }, 3000);
+    updateTyping();
+  });
+
+  // ---------- Message renderer (polished)
   function renderMessage(m){
+    const atBottom = shouldAutoScroll(list);
+
     const id   = m.id;
     const who  = m.user || m.username || "Anon";
-    const text = m.text || "";
-    const ts   = m.ts || "";
+    const text = linkify(m.text || "");
+    const ts   = formatTS(m.ts);
 
     const li = document.createElement("li");
     li.dataset.id = id;
     li.innerHTML = `
       <div class="msg-row">
         <strong>${who}</strong>
-        <span class="msg-time">${ts}</span>
+        <span class="msg-time" title="${m.ts}">${ts}</span>
         ${ROLE === "mod" ? `
           <button class="mini danger msg-del" title="Delete" data-id="${id}">✖</button>
         ` : ""}
       </div>
       <div class="msg-text">${text}</div>
     `;
+    // copy on double-click
+    li.addEventListener("dblclick", () => {
+      navigator.clipboard?.writeText(m.text || "").catch(()=>{});
+    });
+
     list.appendChild(li);
-    list.scrollTop = list.scrollHeight;
+    if (atBottom) doScroll(list);
   }
 
-  // ---------- Submit ----------
+  // ---------- Safer submit (debounce + disable)
+  const submitBtn = form?.querySelector('button[type="submit"]');
+  let sending = false;
+
   form && form.addEventListener("submit", (e) => {
     e.preventDefault();
+    if (sending) return;
+
     const txt = (msgInput.value || "").trim();
     if (!txt) return;
+
+    sending = true;
+    submitBtn && (submitBtn.disabled = true);
 
     const w = parseWhisper(txt);
     if (w) {
@@ -142,9 +195,15 @@ function formatTS(ts) {
 
     msgInput.value = "";
     msgInput.placeholder = pmTo ? `DM to ${pmTo}…` : "Type a message";
+
+    setTimeout(() => {
+      sending = false;
+      submitBtn && (submitBtn.disabled = false);
+      msgInput?.focus();
+    }, 180);
   });
 
-  // ---------- Delete (mods) ----------
+  // ---------- Delete (mods)
   list?.addEventListener("click", (e) => {
     const btn = e.target.closest(".msg-del");
     if (!btn) return;
@@ -158,7 +217,7 @@ function formatTS(ts) {
     if (!usersEl) return;
 
     if (!Array.isArray(roster)) {
-      // If something odd came back, don't wipe the current UI; try again soon.
+      // if odd payload, don't wipe; try again
       setTimeout(() => socket.emit("roster_request"), 800);
       return;
     }
@@ -182,6 +241,10 @@ function formatTS(ts) {
       usersEl.appendChild(li);
     });
 
+    // show count in heading
+    const h2 = document.querySelector('.panel h2');
+    if (h2) h2.textContent = `Online (${(roster || []).length})`;
+
     if (!roster.length) {
       const li = document.createElement("li");
       li.textContent = "No one online yet";
@@ -198,16 +261,22 @@ function formatTS(ts) {
 
   // ---------- PMs ----------
   socket.on("pm", (m) => {
+    const atBottom = shouldAutoScroll(list);
     const li = document.createElement("li");
     li.className = "msg pm";
-    li.textContent = `(DM) ${m.from} → ${m.to}: ${m.text}`;
+    li.innerHTML = `
+      <div class="msg-row">
+        <strong>(DM) ${m.from} → ${m.to}</strong>
+        <span class="msg-time">${formatTS(m.ts)}</span>
+      </div>
+      <div class="msg-text">${linkify(m.text || "")}</div>
+    `;
     list.appendChild(li);
-    list.scrollTop = list.scrollHeight;
+    if (atBottom) doScroll(list);
   });
 
   // ---------- Keep UI in sync with deletes ----------
   socket.on("message_deleted", ({ id }) => {
-    const li = document.querySelector(`li[data-id="${id}"]`);
-    if (li) li.remove();
+    document.querySelector(`li[data-id="${id}"]`)?.remove();
   });
 })();
