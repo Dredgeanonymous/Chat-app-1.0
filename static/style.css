@@ -1,3 +1,76 @@
+
+/* === Reset & Base === */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body, html {
+  height: 100%;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #fff;
+}
+
+/* === Landing Section === */
+.landing {
+  background: url('/static/bg-landing.jpg') no-repeat center center/cover;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Overlay to darken background for readability */
+.landing .overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+}
+
+/* Content */
+.landing .content {
+  position: relative;
+  z-index: 2;
+  max-width: 600px;
+}
+
+.landing h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #ff4d6d;
+  text-shadow: 0 3px 6px rgba(0,0,0,0.5);
+}
+
+.landing p {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+/* Button */
+.btn {
+  display: inline-block;
+  background: #2563eb;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+.btn:hover { background: #1d4ed8; }
+
+/* Footer links */
+.landing .links {
+  margin-top: 2rem;
+  font-size: 0.9rem;
+}
+.landing .links a {
+  color: #ddd;
+  text-decoration: none;
+}
+.landing .links a:hover {
+  text-decoration: underline;
+}
 .site.theme-dark {
   background: url("../static/bg.jpg") no-repeat center center fixed;
   background-size: cover;
