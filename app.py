@@ -72,19 +72,19 @@ def root():
     # Land on login page by default
     return redirect(url_for("landing"))
 
-@app.route("/templates")
+@app.route("/landing")
 def landing():
     return render_template("landing.html")
 
-@app.route("/templates")
+@app.route("/privacy")
 def privacy():
     return render_template("privacy.html")
 
-@app.route("/templates")
+@app.route("/terms")
 def terms():
     return render_template("terms.html")
 
-@app.route("/templates")
+@app.routen("/cookies")
 def cookies():
     return render_template("cookies.html")
     
@@ -133,7 +133,7 @@ def login():
 
     return render_template("login.html", error=None)
 
-@app.route("/templates")
+@app.route("/login")
 def chat():
     uname, role = current_user()
     if not uname:
@@ -150,7 +150,7 @@ def assetlinks_file():
     return send_from_directory('static/.well-known', 'assetlinks.json', mimetype='application/json')
 
 
-@app.route('/static/manifest.json')
+@app.route('/manifest')
 def manifest_file():
     return send_from_directory('static', 'manifest.json', mimetype='application/json')
 
