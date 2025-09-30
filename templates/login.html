@@ -2,59 +2,43 @@
 
 {% block title %}Login · Hot Singles Chat{% endblock %}
 
-{% block body_class %}login{% endblock %}
-
 {% block content %}
-  <div class="card" style="max-width:560px;margin:48px auto;padding:24px;background:#131313;border-radius:12px;color:#fff;">
+  <div class="card login-card">
     {% if error %}
-      <div class="alert" role="alert" style="background:#2a1010;border:1px solid #6b1d1d;padding:12px;border-radius:8px;margin-bottom:16px;">
+      <div class="alert" role="alert">
         {{ error }}
       </div>
     {% endif %}
 
-    <div style="text-align:center; padding:8px 12px 20px;">
-      <h1 style="font-size:2rem; margin:0 0 10px;">Hot Singles Chat</h1>
-      <p style="font-size:1.05rem; line-height:1.5; max-width:520px; margin:0 auto;">
+    <div class="login-branding">
+      <h1>Hot Singles Chat</h1>
+      <p>
         Meet, connect, and chat live with singles near you and around the world.
-        Welcome to <b>Hot Singles Chat</b> — the place where real people come together
-        for fun conversations, flirty connections, and maybe even more.
-        Choose your username below and join the chat!
+        Choose a username and hop in!
       </p>
     </div>
 
-    <form method="post" action="{{ url_for('login') }}" style="display:grid; gap:12px; margin-top:16px;">
+    <form method="post" action="{{ url_for('login') }}" class="form-grid">
       <label for="username">Username</label>
-      <input id="username" name="username" autocomplete="nickname" required
-             placeholder="Enter a display name"
-             style="padding:.6rem;border-radius:.5rem;border:1px solid #333;background:#0b0b0b;color:#fff;">
+      <input id="username" name="username" autocomplete="nickname" required placeholder="Enter a display name">
 
-      <div>
-        <label for="mod_code">Moderator code <small>(optional)</small></label>
-        <input id="mod_code" name="mod_code" placeholder="Enter mod code if you have one"
-               style="width:100%;padding:.6rem;border-radius:.5rem;border:1px solid #333;background:#0b0b0b;color:#fff;">
-      </div>
+      <label for="mod_code">Moderator code <small>(optional)</small></label>
+      <input id="mod_code" name="mod_code" placeholder="Enter mod code if you have one">
 
-      <div>
-        <label for="gender">Gender</label>
-        <select id="gender" name="gender" required
-                style="width:100%;padding:.6rem;border-radius:.5rem;border:1px solid #333;background:#0b0b0b;color:#fff;">
-          <option value="" disabled selected>Select your gender</option>
-          <option value="female">Female</option>
-          <option value="male">Male</option>
-          <option value="nonbinary">Non-binary</option>
-          <option value="trans">Trans</option>
-          <option value="other">Other</option>
-          <option value="hidden">Prefer not to say</option>
-        </select>
-      </div>
+      <label for="gender">Gender</label>
+      <select id="gender" name="gender" required>
+        <option value="" disabled selected>Select your gender</option>
+        <option value="female">Female</option>
+        <option value="male">Male</option>
+        <option value="nonbinary">Non-binary</option>
+        <option value="trans">Trans</option>
+        <option value="other">Other</option>
+        <option value="hidden">Prefer not to say</option>
+      </select>
 
-      <button type="submit"
-              style="padding:.7rem 1rem;border-radius:.6rem;border:0;background:#2563eb;color:#fff;cursor:pointer;">
-        Enter
-      </button>
+      <button type="submit" class="btn primary full">Enter</button>
     </form>
   </div>
 
-  <!-- Cookie banner partial (optional) -->
   {% include "_cookie_banner.html" %}
 {% endblock %}
