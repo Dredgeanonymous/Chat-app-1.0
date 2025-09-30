@@ -7,7 +7,6 @@
   "orientation": "portrait",
   "background_color": "#0d0d0d",
   "theme_color": "#0d0d0d",
-  "description": "Live chat with singles. Real people, real time.",
   "icons": [
     {
       "src": "/static/icon-192.png",
