@@ -12,7 +12,7 @@ from flask_socketio import SocketIO, emit, disconnect
 from markupsafe import escape
 
 # ───────────────────────────────────────────────────────────────────────────────
-# Paths (robust no matter the working directory)
+# Paths (robust no matter they working directory)
 # ───────────────────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
