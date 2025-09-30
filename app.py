@@ -113,7 +113,7 @@ def login():
         username = (request.form.get("username") or "").strip()
         mod_code = (request.form.get("mod_code") or "").strip()
         gender   = (request.form.get("gender") or "").strip()  # captured if you want to use it
-         avatar = (request.form.get("avatar") or "").strip()
+        avatar = (request.form.get("avatar") or "").strip()
 
         if not username:
             return render_template("login.html", error="Username is required.")
