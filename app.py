@@ -140,7 +140,7 @@ def sio_typing(data):
 +   socketio.emit(
 +       "typing",
 +       {"user": uname, "typing": bool((data or {}).get("typing"))},
-+       skip_sid=request.sid
+      skip_sid=request.sid
 +   )
 
 # 3) New chat messages
