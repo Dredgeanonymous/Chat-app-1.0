@@ -1,12 +1,16 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <!-- Manifest -->
   <link rel="manifest" href="{{ url_for('manifest_json') }}">
+
+  <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/static/sw.js');
+      navigator.serviceWorker.register("{{ url_for('service_worker') }}");
     }
   </script>
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{% block title %}Hot Singles Chat{% endblock %}</title>
