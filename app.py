@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from flask import (
-    Flask, render_template, request, redirect,
+    Flask, render_template, request, send_from_directory, redirect,
     url_for, session, send_from_directory
 )
 from flask_socketio import SocketIO, emit, disconnect
@@ -87,6 +87,15 @@ def terms():
 @app.route("/cookies")
 def cookies():
     return render_template("cookies.html")
+    
+@app.route('/static/sw.js')
+def sw():
+    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+
+# Optional: assetlinks.json (added later in step 4)
+@app.route('/.well-known/assetlinks.json')
+def assetlinks():
+    return send_from_directory('static/.well-known', 'assetlinks.json', mimetype='application/json')
 
 
 # ───────────────────────────────────────────────────────────────────────────────
