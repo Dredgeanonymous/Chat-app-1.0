@@ -75,7 +75,7 @@ def cookies():
 
 # ---- PWA files ----
 # Serve the manifest at BOTH /manifest.json and /manifest (compat)
-@app.route("/manifest.json")
+@app.route("/manifest")
 @app.route("/manifest")
 def manifest():
     # Expect file at: static/manifest.json
