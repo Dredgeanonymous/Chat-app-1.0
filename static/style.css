@@ -1,3 +1,21 @@
+.badge-mod {
+  display:inline-block;
+  margin-left:.4rem;
+  font-size:.7rem;
+  padding:0 .35rem;
+  border:1px solid #eab308;
+  color:#eab308;
+  border-radius:.35rem;
+}
+.msg-del {
+  margin-left:.5rem;
+  background:#8b0000;
+  color:#fff;
+  border:0;
+  border-radius:.35rem;
+  cursor:pointer;
+  padding:0 .4rem;
+}
 /* Cookie banner */
 .cookie-banner {
   position: fixed;
