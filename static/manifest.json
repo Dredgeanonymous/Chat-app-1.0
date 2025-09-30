@@ -2,11 +2,22 @@
   "name": "HotSinglesChat",
   "short_name": "HSC",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0d0d0d",
   "theme_color": "#0d0d0d",
+  "description": "Live chat with singles. Real people, real time.",
   "icons": [
-    { "src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }
