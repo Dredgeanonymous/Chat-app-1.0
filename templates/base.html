@@ -1,30 +1,23 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264"
-     crossorigin="anonymous"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{% block title %}Hot Singles Chat{% endblock %}</title>
 
-  <!-- Site verification (site-wide is fine) -->
-  <meta name="juicyads-site-verification" content="3a2230dfb5fd4e823902e42403b11f9a">
-
-  <!-- PWA + styles -->
-  <meta name="theme-color" content="#111111">
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <meta name="theme-color" content="#111111">
 
   <!-- Icons -->
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         crossorigin="anonymous"/>
 
+  {# allow child templates to add <script> or <style> in <head> #}
   {% block extra_head %}{% endblock %}
 </head>
-
-<body class="site {% block body_class %}{% endblock %}"
-      {% block body_data %}{% endblock %}>
+<body class="site" {% block body_data %}{% endblock %}>
   <header class="site-header">
     <a href="{{ url_for('landing') }}" class="brand">
       <span class="logo-dot"></span>
@@ -43,7 +36,7 @@
   {% block content %}{% endblock %}
 
   <footer class="site-footer">
-    <p>© HotSinglesChat •
+    <p>© {{  now().year if now else '' }} HotSinglesChat •
        <a href="{{ url_for('privacy') }}">Privacy</a> •
        <a href="{{ url_for('terms') }}">Terms</a> •
        <a href="{{ url_for('cookies') }}">Cookies</a>
@@ -61,7 +54,7 @@
   </div>
 
   <script>
-    // Tiny cookie consent
+    // Very small cookie consent
     (function () {
       const KEY = "cookie_ok=1";
       if (!document.cookie.includes("cookie_ok=")) {
@@ -74,13 +67,7 @@
     })();
   </script>
 
-  <!-- Register SW if present in /static -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('{{ url_for("static", filename="sw.js") }}').catch(()=>{});
-    }
-  </script>
-
+  {# allow child templates to add scripts before </body> #}
   {% block extra_scripts %}{% endblock %}
 </body>
-  </html>
+</html>
