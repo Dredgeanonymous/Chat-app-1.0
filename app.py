@@ -1,4 +1,4 @@
-# app.py — Flask + Flask-SocketIO (merged & cleaned)
+# app.py — Flask + Flask-SocketIO (clean)
 
 import os
 from datetime import datetime
@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 
-# ── App / Socket.IO (must be before any decorators) ───────────────────────────
+# ── App / Socket.IO (must be defined before any @app.route) ───────────────────
 app = Flask(
     __name__,
     static_folder=str(STATIC_DIR),
@@ -39,22 +39,20 @@ messages = []          # [{id, user, text, ts}]
 online_by_sid = {}     # sid -> {"username": str, "role": "user"|"mod", "gender": str}
 sid_by_username = {}   # username -> sid
 
-def current_user():
-    return session.get("username"), session.get("role", "user")
 
-def next_msg_id():
+def next_msg_id() -> str:
     return f"m{len(messages)+1:06d}"
 
-# Jinja helper: {{ now().year }}
+
+# {{ now().year }} helper for Jinja
 @app.context_processor
 def inject_now():
     return {"now": datetime.utcnow}
 
-# ===================== Routes =====================
+# ───────────────────────────────── Routes ─────────────────────────────────────
 
 @app.route("/")
 def root():
-    # Land on your landing page by default (you can switch to "login" if you prefer)
     return redirect(url_for("landing"))
 
 @app.route("/landing")
@@ -73,25 +71,26 @@ def terms():
 def cookies():
     return render_template("cookies.html")
 
-# ---- PWA files ----
-# Serve the manifest at BOTH /manifest.json and /manifest (compat)
+# ---- PWA files (match base.html) ---------------------------------------------
 
+# Serve the manifest at BOTH /manifest.json and /manifest (compat)
+@app.route("/manifest.json")
 @app.route("/manifest")
 def manifest():
-    # Expect file at: static/manifest.json
     return send_from_directory("static", "manifest.json", mimetype="application/json")
 
+# Service Worker used by base.html: url_for('sw')
 @app.route("/sw.js")
 def sw():
-    # Expect file at: static/sw.js
     return send_from_directory("static", "sw.js", mimetype="application/javascript")
 
+# Android TWA verification
 @app.route("/.well-known/assetlinks.json")
 def assetlinks():
-    # Expect file at: static/.well-known/assetlinks.json
     return send_from_directory("static/.well-known", "assetlinks.json", mimetype="application/json")
 
-# ---- Auth-ish (simple demo) ----
+# ---- Auth / Chat pages -------------------------------------------------------
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -112,79 +111,18 @@ def login():
 
 @app.route("/chat")
 def chat():
-    uname, role = current_user()
+    uname = session.get("username")
     if not uname:
         return redirect(url_for("login"))
-    return render_template("chat.html", username=uname, role=role)
+    return render_template("chat.html", username=uname, role=session.get("role", "user"))
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
 
-# ================= Socket.IO events =================
+# ───────────────────────────── Socket.IO events ───────────────────────────────
 
-# 1) Roster
-def broadcast_roster():
-    socketio.emit("online", roster, broadcast=True)
-    socketio.emit("online", roster)
-
-# 2) Typing indicator
-@socketio.on("typing")
-def sio_typing(data):
-    uname = session.get("username")
-    if not uname:
-            return
-    emit("typing", {"user": uname, "typing": bool((data or {}).get("typing"))}, broadcast=True, include_self=False)
-    socketio.emit(
-      "typing",
-      {"user": uname, "typing": bool((data or {}).get("typing"))},
-      skip_sid=request.sid)
-
-# 3) New chat messages
-@socketio.on("chat")
-def sio_chat(data):
-    emit("chat", msg, broadcast=True)
-    socketio.emit("chat", msg)
-    
-# 4) Private messages (keep direct send, echo to sender explicitly)
-@socketio.on("pm")
-def sio_pm(data):
-    emit("pm", payload, to=target_sid)
-    emit("pm", payload)
-    socketio.emit("pm", payload, to=target_sid)
-    socketio.emit("pm", payload, to=request.sid)
-
-# 5) Delete message broadcast
-@socketio.on("delete_message")
-def sio_delete_message(data):
-    emit("message_deleted", {"id": mid}, broadcast=True)
-    socketio.emit("message_deleted", {"id": mid})
-    
-@socketio.on("connect")
-def sio_connect():
-    uname = session.get("username")
-    role = session.get("role", "user")
-    gender = session.get("gender", "")
-
-    # If they connect without being logged in, drop the socket (keeps room clean)
-    if not uname:
-        disconnect()
-        return
-
-    online_by_sid[request.sid] = {"username": uname, "role": role, "gender": gender}
-    sid_by_username[uname] = request.sid
-    
-    # Send recent messages to the new client (keep from your previous file)
-    emit("chat_history", messages[-100:])
-
-    # Update roster for everyone
-    broadcast_roster()
-
-@socketio.on("ping_test")
-def ping_test():
-    emit("pong_test", {"ok": True})
-    
 def build_roster():
     roster = [{
         "username": info.get("username"),
@@ -194,17 +132,43 @@ def build_roster():
     roster.sort(key=lambda r: (r["username"] or "").lower())
     return roster
 
-@socketio.on("roster_request")
-def sio_roster_request():
-    emit("online", build_roster())
+def broadcast_roster():
+    # server-wide broadcast (no 'broadcast' kw on server.emit)
+    socketio.emit("online", build_roster())
+
+@socketio.on("connect")
+def sio_connect():
+    uname = session.get("username")
+    role = session.get("role", "user")
+    gender = session.get("gender", "")
+
+    if not uname:
+        # keep room clean: disconnect sockets without a logged-in session
+        disconnect()
+        return
+
+    online_by_sid[request.sid] = {"username": uname, "role": role, "gender": gender}
+    sid_by_username[uname] = request.sid
+
+    # send recent chat history to the new client (trim to last 100)
+    emit("chat_history", messages[-100:])
+    broadcast_roster()
 
 @socketio.on("disconnect")
 def sio_disconnect():
     info = online_by_sid.pop(request.sid, None)
     if info:
-        uname = info["username"]
-        sid_by_username.pop(uname, None)
+        sid_by_username.pop(info["username"], None)
         broadcast_roster()
+
+@socketio.on("typing")
+def sio_typing(data):
+    uname = session.get("username")
+    if not uname:
+        return
+    emit("typing",
+         {"user": uname, "typing": bool((data or {}).get("typing"))},
+         broadcast=True, include_self=False)
 
 @socketio.on("chat")
 def sio_chat(data):
@@ -245,27 +209,27 @@ def sio_pm(data):
         "text": escape(txt),
         "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
-    # to recipient + echo back to sender
+    # send to recipient + echo back to sender
     emit("pm", payload, to=target_sid)
     emit("pm", payload)
 
 @socketio.on("delete_message")
 def sio_delete_message(data):
-    role = session.get("role", "user")
-    if role != "mod":
+    if session.get("role", "user") != "mod":
         return
 
     mid = (data or {}).get("id")
     if not mid:
         return
 
-    idx = next((i for i, m in enumerate(messages) if m["id"] == mid), None)
-    if idx is not None:
-        messages.pop(idx)
-        emit("message_deleted", {"id": mid}, broadcast=True)
+    for i, m in enumerate(messages):
+        if m["id"] == mid:
+            messages.pop(i)
+            emit("message_deleted", {"id": mid}, broadcast=True)
+            break
 
 # ── Entrypoint ────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     # Dev: python app.py
-    # Prod (Render → Start Command): gunicorn -k gevent -w 1 app:app
+    # Prod (Render start command): gunicorn -k gevent -w 1 app:app
     socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
