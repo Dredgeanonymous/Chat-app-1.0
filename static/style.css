@@ -166,3 +166,67 @@
   margin-right: 2px;
   font-size: .75rem;
   }
+
+/* === Avatar styling === */
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: inline-block;
+  margin-right: 8px;
+  border: 1px solid rgba(255,255,255,.15);
+  vertical-align: middle;
+}
+.avatar-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: .85rem;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* === Moderator badge === */
+.badge-mod {
+  background: #e11d48; /* red accent */
+  color: #fff;
+  padding: 2px 6px;
+  margin-left: 6px;
+  border-radius: 4px;
+  font-size: .7rem;
+  font-weight: 600;
+}
+
+/* === Gender info === */
+.g {
+  margin-left: 6px;
+  font-size: .75rem;
+  color: #94a3b8;
+}
+.g i {
+  margin-right: 2px;
+  font-size: .75rem;
+}
+
+/* === Online list items === */
+.users li {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.users li:hover {
+  background: rgba(255,255,255,0.08);
+  transform: translateX(2px);
+}
+.users li:active {
+  transform: scale(0.97);
+  }
