@@ -107,12 +107,9 @@ def manifest():
     return send_from_directory("static", "manifest.webmanifest",
                                mimetype="application/manifest+json")
 
-@app.route("/sw.js")
-def sw():
-    return send_from_directory("static", "sw.js",
-                               mimetype="application/javascript")
-
-
+@app.route('/static/sw.js')
+def service_worker():
+    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
 # ───────────────────────────────────────────────────────────────────────────────
 # Auth-ish (simple demo)
 # ───────────────────────────────────────────────────────────────────────────────
