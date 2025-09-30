@@ -155,22 +155,16 @@ def broadcast_roster():
     socketio.emit("online", roster, broadcast=True)
 
 @socketio.on("connect")
-def sio_connect():
-    uname = session.get("username")
+def sio_connect(auth):
+    sid = request.sid
+    username = session.get("username") or f"Anon-{sid[:5]}"
     role = session.get("role", "user")
-    gender = session.get("gender", "")
-    if not uname:
-        disconnect()
-        return
+    gender = session.get("gender", "hidden")
 
-    online_by_sid[request.sid] = {"username": uname, "role": role, "gender": gender}
-    sid_by_username[uname] = request.sid
+    online_by_sid[sid] = {"username": username, "role": role, "gender": gender}
+    sid_by_username[username] = sid
 
-    # Send recent messages to the new client
-    emit("chat_history", messages[-100:])
-
-    # Send full roster (objects with role+gender) to everyone
-    broadcast_roster()
+    emit("online", list(online_by_sid.values()), broadcast=True)
 @socketio.on("ping_test")
 def ping_test():
     emit("pong_test", {"ok": True})
