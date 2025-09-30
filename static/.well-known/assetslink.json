@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "org.hotsingleschat.app",
+      "package_name": "org.hotsingleschat.app", 
       "sha256_cert_fingerprints": [
-        "AA:BB:CC:DD:EE:FF:..."
+        "89:BF:4C:56:1F:40:84:D4:95:91:33:60:D0:AB:C7:18:FF:9D:F7:27:C9:92:69:87:A2:44:1F:AB:02:0C:DF:4E"
       ]
     }
   }
