@@ -124,18 +124,47 @@ def logout():
 
 # ================= Socket.IO events =================
 
+# 1) Roster
 def broadcast_roster():
-    # List of {username, role, gender}, sorted
-    roster = []
-    for info in online_by_sid.values():
-        roster.append({
-            "username": info.get("username"),
-            "role": info.get("role", "user"),
-            "gender": info.get("gender", ""),
-        })
-    roster.sort(key=lambda r: (r["username"] or "").lower())
-    socketio.emit("online", roster, broadcast=True)
+    ...
+-   socketio.emit("online", roster, broadcast=True)
++   socketio.emit("online", roster)
 
+# 2) Typing indicator
+@socketio.on("typing")
+def sio_typing(data):
+    uname = session.get("username")
+    if not uname:
+        return
+-   emit("typing", {"user": uname, "typing": bool((data or {}).get("typing"))}, broadcast=True, include_self=False)
++   socketio.emit(
++       "typing",
++       {"user": uname, "typing": bool((data or {}).get("typing"))},
++       skip_sid=request.sid
++   )
+
+# 3) New chat messages
+@socketio.on("chat")
+def sio_chat(data):
+    ...
+-   emit("chat", msg, broadcast=True)
++   socketio.emit("chat", msg)
+
+# 4) Private messages (keep direct send, echo to sender explicitly)
+@socketio.on("pm")
+def sio_pm(data):
+    ...
+-   emit("pm", payload, to=target_sid)
+-   emit("pm", payload)
++   socketio.emit("pm", payload, to=target_sid)
++   socketio.emit("pm", payload, to=request.sid)
+
+# 5) Delete message broadcast
+@socketio.on("delete_message")
+def sio_delete_message(data):
+    ...
+-   emit("message_deleted", {"id": mid}, broadcast=True)
++   socketio.emit("message_deleted", {"id": mid})
 @socketio.on("connect")
 def sio_connect():
     uname = session.get("username")
