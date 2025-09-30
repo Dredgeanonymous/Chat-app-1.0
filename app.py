@@ -102,7 +102,7 @@ def assetlinks():
 # PWA helpers (your base.html uses url_for('manifest') and registers /sw.js)
 # Place files at static/manifest.webmanifest and static/sw.js
 # ───────────────────────────────────────────────────────────────────────────────
-@app.route("/manifest")
+@app.route("/static/manifest.json")
 def manifest():
     return send_from_directory("static", "manifest.webmanifest",
                                mimetype="application/manifest+json")
@@ -133,7 +133,7 @@ def login():
 
     return render_template("login.html", error=None)
 
-@app.route("/chat")
+@app.route("/templates")
 def chat():
     uname, role = current_user()
     if not uname:
@@ -150,7 +150,7 @@ def assetlinks_file():
     return send_from_directory('static/.well-known', 'assetlinks.json', mimetype='application/json')
 
 
-@app.route('/manifest.json')
+@app.route('/static/manifest.json')
 def manifest_file():
     return send_from_directory('static', 'manifest.json', mimetype='application/json')
 
