@@ -171,6 +171,22 @@ def sio_connect():
 
     # Send full roster (objects with role+gender) to everyone
     broadcast_roster()
+@socketio.on("ping_test")
+def ping_test():
+    emit("pong_test", {"ok": True})
+
+def build_roster():
+    roster = [{
+        "username": info.get("username"),
+        "role": info.get("role", "user"),
+        "gender": info.get("gender", "")
+    } for info in online_by_sid.values()]
+    roster.sort(key=lambda r: (r["username"] or "").lower())
+    return roster
+
+@socketio.on("roster_request")
+def sio_roster_request():
+    emit("online", build_roster())
 
 @socketio.on("disconnect")
 def sio_disconnect():
