@@ -125,7 +125,7 @@ def logout():
 # ================= Socket.IO events =================
 
 # 1) Roster
-def broadcast_roster()
+def broadcast_roster():
     socketio.emit("online", roster, broadcast=True)
     socketio.emit("online", roster)
 
