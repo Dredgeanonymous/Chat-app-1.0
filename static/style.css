@@ -1,7 +1,14 @@
 
 
-/* ====== Theme ====== */
-.site.theme-dark { background:#0d0d0d; color:#eaeaea; }
+.site.theme-dark {
+  background: url("../static/bg.jpg") no-repeat center center fixed;
+  background-size: cover;
+  color: #eaeaea;
+}.site.theme-dark {
+  background: url("../static/bg.jpg") no-repeat center center fixed;
+  background-size: cover;
+  color: #eaeaea;
+}
 .site.theme-light { background:#f7f7f8; color:#0e141b; }
 
 .theme-dark .panel, .theme-dark .topbar { background:#111; border-color:#1f2937; }
