@@ -81,7 +81,7 @@ def privacy():
     return render_template("privacy.html")
 @app.route('/manifest.json')
 def manifest_file():
-    return send_from_directory('static', 'manifest.json', mimetype='application/json)
+    return send_from_directory('static', 'manifest.json', mimetype='application/javascript')
     
 
 @app.route("/terms")
