@@ -177,6 +177,13 @@ def build_roster():
     } for info in online_by_sid.values()]
     roster.sort(key=lambda r: (r["username"] or "").lower())
     return roster
+@socketio.on("typing")
+def sio_typing(data):
+    uname = session.get("username")
+    if not uname:
+        return
+    # Notify others only
+    emit("typing", {"user": uname, "typing": bool((data or {}).get("typing"))}, broadcast=True, include_self=False)
 
 @socketio.on("roster_request")
 def sio_roster_request():
