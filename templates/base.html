@@ -1,10 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- Manifest -->
+  <!-- PWA: manifest + service worker -->
   <link rel="manifest" href="{{ url_for('manifest') }}">
-
-  <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register("{{ url_for('sw') }}");
@@ -19,7 +17,7 @@
   <meta name="description" content="Live chat with singles. Real people, real time.">
   <link rel="icon" href="{{ url_for('static', filename='icon.png') }}">
 
-  <!-- Styles -->
+  <!-- Site styles -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <!-- Icons -->
@@ -27,11 +25,14 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         crossorigin="anonymous"/>
 
-  <!-- Google AdSense (Auto Ads; optional) -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264" crossorigin="anonymous"></script>
+  <!-- (Optional) Google AdSense -->
+  <script async
+    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264"
+    crossorigin="anonymous"></script>
 
   {% block extra_head %}{% endblock %}
 </head>
+
 <body class="site theme-dark" {% block body_data %}{% endblock %}>
   <header class="site-header">
     <a href="{{ url_for('landing') }}" class="brand">
@@ -101,4 +102,4 @@
 
   {% block extra_scripts %}{% endblock %}
 </body>
-</html>
+  </html>
