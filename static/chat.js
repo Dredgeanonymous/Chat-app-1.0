@@ -1,3 +1,18 @@
+function hashColor(name) {
+  // tiny stable color from name
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  return `hsl(${hue} 70% 45%)`;
+}
+function renderAvatar(avatarUrl, username) {
+  const initial = (username || "A").trim().charAt(0).toUpperCase();
+  if (avatarUrl) {
+    return `<img class="avatar" src="${avatarUrl}" alt="${username || ""}" onerror="this.remove()">`;
+  }
+  return `<span class="avatar avatar-fallback" style="background:${hashColor(username||"A")}">${initial}</span>`;
+}
+
 // static/chat.js — polished UI/UX + stable socket + gender icons + MOD delete
 
 (function () {
