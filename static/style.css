@@ -1,4 +1,8 @@
-
+.site.theme-dark {
+  background: url("../static/bg.jpg") no-repeat center center fixed;
+  background-size: cover;
+  color: #eaeaea;
+}
 
 .site.theme-dark {
   background: url("../static/bg.jpg") no-repeat center center fixed;
