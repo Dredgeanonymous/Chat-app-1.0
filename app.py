@@ -79,7 +79,7 @@ def landing():
 @app.route("/privacy")
 def privacy():
     return render_template("privacy.html")
-@app.route('/static/manifest.json')
+@app.route('/manifest.json')
 def manifest_file():
     return send_from_directory('static', 'manifest.json', mimetype='application/json')
     
@@ -98,7 +98,7 @@ def cookies():
 # Place files at static/manifest.webmanifest and static/sw.js
 # ───────────────────────────────────────────────────────────────────────────────
 
-@app.route('/static/sw.js')
+@app.route('sw.js')
 def service_worker():
     return send_from_directory('static', 'sw.js', mimetype='application/javascript')
 # ───────────────────────────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-@app.route('/static/.well-known/assetlinks.json')
+@app.route('/.well-known/assetlinks.json')
 def assetlinks_file():
     return send_from_directory('static/.well-known', 'assetlinks.json', mimetype='application/json')
 
