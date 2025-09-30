@@ -230,3 +230,22 @@
 .users li:active {
   transform: scale(0.97);
   }
+/* Typing indicator */
+.typing {
+  display:flex; align-items:center; gap:8px;
+  padding:6px 12px; color:#94a3b8; font-size:12px;
+}
+.typing .who { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 60vw; }
+.typing .dots { display:inline-flex; gap:4px; align-items:flex-end; }
+.typing .dot {
+  width:6px; height:6px; border-radius:50%;
+  background: currentColor; opacity:.6;
+  animation: typing-bounce 1s infinite ease-in-out;
+}
+.typing .dot:nth-child(2){ animation-delay: .12s; }
+.typing .dot:nth-child(3){ animation-delay: .24s; }
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity:.45; }
+  30%          { transform: translateY(-4px); opacity:.95; }
+}
