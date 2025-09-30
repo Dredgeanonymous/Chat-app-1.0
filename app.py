@@ -72,19 +72,19 @@ def root():
     # Land on login page by default
     return redirect(url_for("landing"))
 
-@app.route("/landing")
+@app.route("/templates")
 def landing():
     return render_template("landing.html")
 
-@app.route("/privacy")
+@app.route("/templates")
 def privacy():
     return render_template("privacy.html")
 
-@app.route("/terms")
+@app.route("/templates")
 def terms():
     return render_template("terms.html")
 
-@app.route("/cookies")
+@app.route("/templates")
 def cookies():
     return render_template("cookies.html")
     
