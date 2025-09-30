@@ -98,7 +98,7 @@ def cookies():
 # Place files at static/manifest.webmanifest and static/sw.js
 # ───────────────────────────────────────────────────────────────────────────────
 
-@app.route('/sw.js')
+@app.route('/static/sw.js')
 def service_worker():
     return send_from_directory('static', 'sw.js', mimetype='application/javascript')
 # ───────────────────────────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-@app.route('/.well-known/assetlinks.json')
+@app.route('/static/.well-known/assetlinks.json')
 def assetlinks_file():
     return send_from_directory('static/.well-known', 'assetlinks.json', mimetype='application/json')
 
