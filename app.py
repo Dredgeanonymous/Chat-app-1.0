@@ -127,8 +127,8 @@ def logout():
 # 1) Roster
 def broadcast_roster():
     ...
-  socketio.emit("online", roster, broadcast=True)
-  socketio.emit("online", roster)
+    socketio.emit("online", roster, broadcast=True)
+    socketio.emit("online", roster)
 
 # 2) Typing indicator
 @socketio.on("typing")
@@ -137,7 +137,7 @@ def sio_typing(data):
     if not uname:
         return
   emit("typing", {"user": uname, "typing": bool((data or {}).get("typing"))}, broadcast=True, include_self=False)
-   socketio.emit(
+    socketio.emit(
       "typing",
       {"user": uname, "typing": bool((data or {}).get("typing"))},
       skip_sid=request.sid
@@ -163,7 +163,7 @@ def sio_pm(data):
 def sio_delete_message(data):
     ...
    emit("message_deleted", {"id": mid}, broadcast=True)
-  socketio.emit("message_deleted", {"id": mid})
+    socketio.emit("message_deleted", {"id": mid})
 @socketio.on("connect")
 def sio_connect():
     uname = session.get("username")
