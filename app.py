@@ -136,7 +136,7 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-@app.route('.well-known/assetlinks.json')
+@app.route('/.well-known/assetlinks.json')
 def assetlinks_file():
     return send_from_directory('static/.well-known', 'assetlinks.json', mimetype='application/json')
 
