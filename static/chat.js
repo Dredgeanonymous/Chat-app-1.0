@@ -1,15 +1,32 @@
-// static/chat.js
+// static/chat.js  — robust socket + roster + mod delete + gender icons
 
 (function () {
-  const socket   = io();
+  // ---------- Connection (stable) ----------
+  const socket = io({
+    transports: ["websocket", "polling"],
+    upgrade: true
+  });
+
+  // Role detection (works whether window.ROLE or body dataset is set first)
+  const BODY_ROLE = (document.body && document.body.dataset && document.body.dataset.role) || "";
+  const ROLE = (String(window.ROLE || BODY_ROLE || "user")).toLowerCase(); // "mod" shows delete buttons
+
   const form     = document.getElementById("sendForm");
   const msgInput = document.getElementById("msgInput");
   const list     = document.getElementById("messages");
   const usersBox = document.getElementById("users");
-  const ROLE     = (window.ROLE || "user").toLowerCase(); // "mod" shows delete buttons
 
-  socket.on("connect", () => console.log("Socket connected", socket.id));
+  socket.on("connect", () => {
+    console.log("SOCKET CONNECTED", socket.id);
+    // Ask the server for the roster every (re)connect — prevents empty list after hiccups
+    socket.emit("roster_request");
+  });
+  socket.on("reconnect", () => {
+    console.log("SOCKET RECONNECTED");
+    socket.emit("roster_request");
+  });
   socket.on("connect_error", (e) => console.error("connect_error", e));
+  socket.on("error", (e) => console.error("socket_error", e));
   socket.on("disconnect", (r) => console.warn("disconnected", r));
 
   // ---------- DM helpers ----------
@@ -125,14 +142,19 @@
     if (id) socket.emit("delete_message", { id });
   });
 
-  // ---------- ONLINE roster (now objects with role+gender) ----------
+  // ---------- ONLINE roster (objects with role+gender) ----------
   socket.on("online", (roster) => {
     const usersEl = usersBox;
     if (!usersEl) return;
-    usersEl.innerHTML = "";
 
+    if (!Array.isArray(roster)) {
+      // If something odd came back, don't wipe the current UI; try again soon.
+      setTimeout(() => socket.emit("roster_request"), 800);
+      return;
+    }
+
+    usersEl.innerHTML = "";
     (roster || []).forEach((u) => {
-      // Accept either objects or strings (backward compatible)
       const isObj   = u && typeof u === "object";
       const name    = isObj ? (u.username || u.user || "Anon") : (u || "Anon");
       const role    = isObj ? (u.role || "user") : "user";
@@ -149,6 +171,12 @@
       li.addEventListener("click", () => startPM(name));
       usersEl.appendChild(li);
     });
+
+    if (!roster.length) {
+      const li = document.createElement("li");
+      li.textContent = "No one online yet";
+      usersEl.appendChild(li);
+    }
   });
 
   // ---------- History & live messages ----------
