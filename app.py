@@ -92,26 +92,13 @@ def terms():
 def cookies():
     return render_template("cookies.html")
     
-@app.route('/static/sw.js')
-def sw():
-    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
-
-# Optional: assetlinks.json (added later in step 4)
-@app.route('/.well-known/assetlinks.json')
-def assetlinks():
-    return send_from_directory('static/.well-known', 'assetlinks.json', mimetype='application/json')
-
 
 # ───────────────────────────────────────────────────────────────────────────────
 # PWA helpers (your base.html uses url_for('manifest') and registers /sw.js)
 # Place files at static/manifest.webmanifest and static/sw.js
 # ───────────────────────────────────────────────────────────────────────────────
-@app.route("/manifest")
-def manifest():
-    return send_from_directory("static", "manifest.webmanifest",
-                               mimetype="application/manifest+json")
 
-@app.route('/static/sw.js')
+@app.route('/sw.js')
 def service_worker():
     return send_from_directory('static', 'sw.js', mimetype='application/javascript')
 # ───────────────────────────────────────────────────────────────────────────────
@@ -149,7 +136,7 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-@app.route('/static/.well-known/assetlinks.json')
+@app.route('.well-known/assetlinks.json')
 def assetlinks_file():
     return send_from_directory('static/.well-known', 'assetlinks.json', mimetype='application/json')
 
