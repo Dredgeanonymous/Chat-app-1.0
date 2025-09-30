@@ -40,6 +40,7 @@ function renderAvatar(avatarUrl, username) {
   }
 
   // ---------- Connection (stable) ----------
+  const REACTION_SET = ["👍","😂","😍","😮","🙏"];
   const socket = io({ transports: ["websocket", "polling"], upgrade: true });
 
   // Role detection (works if set on body or window)
