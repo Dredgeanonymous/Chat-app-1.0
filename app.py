@@ -122,7 +122,7 @@ def login():
         session["username"] = username
         session["role"] = role
         session["gender"] = gender
-        session["avatar"] = avatar  # may be empty
+        
         return redirect(url_for("chat"))
 
     return render_template("login.html", error=None)
@@ -152,6 +152,8 @@ def broadcast_roster():
             "username": info.get("username"),
             "role": info.get("role", "user"),
             "gender": info.get("gender", ""),
+            "avatar": info.get("avatar", "")
+
         })
     roster.sort(key=lambda r: (r["username"] or "").lower())
     socketio.emit("online", roster, broadcast=True)
@@ -204,6 +206,45 @@ def sio_disconnect():
         uname = info["username"]
         sid_by_username.pop(uname, None)
         broadcast_roster()
+@socketio.on("react")
+def sio_react(data):
+    """
+    data = { "id": "<messageId>", "emoji": "👍" }
+    Toggles the user's reaction on that message.
+    """
+    uname = session.get("username")
+    if not uname:
+        return
+
+    mid   = (data or {}).get("id")
+    emoji = (data or {}).get("emoji")
+    if not mid or not emoji:
+        return
+
+    # find the message
+    target = next((m for m in messages if m.get("id") == mid), None)
+    if not target:
+        return
+
+    target.setdefault("reactions", {})
+    users = set(target["reactions"].get(emoji, []))
+
+    # toggle
+    if uname in users:
+        users.remove(uname)
+    else:
+        users.add(uname)
+
+    target["reactions"][emoji] = sorted(users)
+
+    # broadcast minimal update
+    socketio.emit("reaction_update", {
+        "id": mid,
+        "emoji": emoji,
+        "users": list(users),
+        "count": len(users)
+    }, broadcast=True)
+
 @socketio.on("chat")
 def sio_chat(data):
     uname = session.get("username")
@@ -218,6 +259,9 @@ def sio_chat(data):
         "user": uname,
         "text": escape(txt),
         "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+         "avatar": session.get("avatar", ""),
+         "reactions": {}         # {"👍": ["Alice","Bob"], "😂": ["Eve"]}
+
     }
     messages.append(msg)
     emit("chat", msg, broadcast=True)
@@ -242,6 +286,10 @@ def sio_pm(data):
         "to": to_user,
         "text": escape(txt),
         "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "avatar": session.get("avatar", ""),
+        "reactions": {}         # {"👍": ["Alice","Bob"], "😂": ["Eve"]}
+
+
     }
     # to recipient + echo back to sender
     emit("pm", payload, to=target_sid)
