@@ -1,27 +1,29 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <link rel="icon" href="{{ url_for('static', filename='icon.png') }}">
-<meta name="description" content="Live chat with singles. Real people, real time.">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{% block title %}Hot Singles Chat{% endblock %}</title>
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="manifest" href="{{ url_for('manifest') }}">
   <meta name="theme-color" content="#111111">
+  <meta name="description" content="Live chat with singles. Real people, real time.">
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icon.png') }}">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <!-- Icons -->
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         crossorigin="anonymous"/>
 
-  {# allow child templates to add <script> or <style> in <head> #}
+  <!-- Google AdSense (Auto Ads; optional) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264" crossorigin="anonymous"></script>
+
   {% block extra_head %}{% endblock %}
 </head>
-<body class="site" {% block body_data %}{% endblock %}>
+<body class="site theme-dark" {% block body_data %}{% endblock %}>
   <header class="site-header">
     <a href="{{ url_for('landing') }}" class="brand">
       <span class="logo-dot"></span>
@@ -33,6 +35,9 @@
       <a href="{{ url_for('privacy') }}">Privacy</a>
       <a href="{{ url_for('terms') }}">Terms</a>
       <a href="{{ url_for('cookies') }}">Cookies</a>
+      <button id="themeToggle" class="btn subtle" type="button" title="Toggle theme">
+        <i class="fa-solid fa-circle-half-stroke"></i>
+      </button>
       <a class="btn primary" href="{{ url_for('login') }}">Enter Chat</a>
     </nav>
   </header>
@@ -58,7 +63,21 @@
   </div>
 
   <script>
-    // Very small cookie consent
+    // Theme toggle (persisted)
+    (function () {
+      const key = "theme";
+      const body = document.body;
+      const btn = document.getElementById("themeToggle");
+      const saved = localStorage.getItem(key);
+      if (saved) body.className = "site " + saved;
+      btn?.addEventListener("click", () => {
+        const next = body.classList.contains("theme-dark") ? "theme-light" : "theme-dark";
+        body.className = "site " + next;
+        localStorage.setItem(key, next);
+      });
+    })();
+
+    // Cookie consent
     (function () {
       const KEY = "cookie_ok=1";
       if (!document.cookie.includes("cookie_ok=")) {
@@ -71,7 +90,6 @@
     })();
   </script>
 
-  {# allow child templates to add scripts before </body> #}
   {% block extra_scripts %}{% endblock %}
 </body>
-</html>
+  </html>
