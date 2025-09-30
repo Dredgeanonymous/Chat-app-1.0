@@ -1,3 +1,11 @@
+document.getElementById('backToChat').addEventListener('click', function() {
+  // Clear DM mode
+  window.pmTo = null;
+  // Reset the input placeholder
+  document.getElementById('msgInput').placeholder = "Type a message";
+  // Hide the back button
+  this.style.display = 'none';
+});
 function reactionStripHTML(m){
   // render reaction buttons + counts
   const rx = m.reactions || {};
