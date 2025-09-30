@@ -168,7 +168,7 @@ def sio_connect(auth):
     username = session.get("username") or f"Anon-{sid[:5]}"
     role = session.get("role", "user")
     gender = session.get("gender", "hidden")
-
+    avatar = session.get("avatar", "")
     online_by_sid[sid] = {"username": username, "role": role, "gender": gender}
     sid_by_username[username] = sid
 
