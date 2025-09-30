@@ -126,7 +126,7 @@ def logout():
 
 # 1) Roster
 def broadcast_roster():
-    ...
+        ...
     socketio.emit("online", roster, broadcast=True)
     socketio.emit("online", roster)
 
@@ -135,7 +135,7 @@ def broadcast_roster():
 def sio_typing(data):
     uname = session.get("username")
     if not uname:
-        return
+            return
     emit("typing", {"user": uname, "typing": bool((data or {}).get("typing"))}, broadcast=True, include_self=False)
     socketio.emit(
       "typing",
@@ -145,23 +145,23 @@ def sio_typing(data):
 # 3) New chat messages
 @socketio.on("chat")
 def sio_chat(data):
-    ...
+        ...
     emit("chat", msg, broadcast=True)
     socketio.emit("chat", msg)
     
 # 4) Private messages (keep direct send, echo to sender explicitly)
 @socketio.on("pm")
 def sio_pm(data):
-    ...
-     emit("pm", payload, to=target_sid)
-     emit("pm", payload)
-     socketio.emit("pm", payload, to=target_sid)
-     socketio.emit("pm", payload, to=request.sid)
+            ...  
+    emit("pm", payload, to=target_sid)
+    emit("pm", payload)
+    socketio.emit("pm", payload, to=target_sid)
+    socketio.emit("pm", payload, to=request.sid)
 
 # 5) Delete message broadcast
 @socketio.on("delete_message")
 def sio_delete_message(data):
-    ...
+        ...
     emit("message_deleted", {"id": mid}, broadcast=True)
     socketio.emit("message_deleted", {"id": mid})
 @socketio.on("connect")
@@ -177,7 +177,7 @@ def sio_connect():
 
     online_by_sid[request.sid] = {"username": uname, "role": role, "gender": gender}
     sid_by_username[uname] = request.sid
-
+    
     # Send recent messages to the new client (keep from your previous file)
     emit("chat_history", messages[-100:])
 
@@ -187,7 +187,7 @@ def sio_connect():
 @socketio.on("ping_test")
 def ping_test():
     emit("pong_test", {"ok": True})
-
+    
 def build_roster():
     roster = [{
         "username": info.get("username"),
