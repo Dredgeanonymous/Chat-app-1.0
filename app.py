@@ -82,7 +82,7 @@ def manifest():
     return send_from_directory("static", "manifest.json", mimetype="application/json")
 
 @app.route("/sw.js")
-def sw():
+def service_worker():
     # Expect file at: static/sw.js
     return send_from_directory("static", "sw.js", mimetype="application/javascript")
 
