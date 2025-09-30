@@ -8,12 +8,7 @@
 {% block extra_head %}
   <!-- Emoji picker (must load before chat.js uses it) -->
   <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js" crossorigin="anonymous"></script>
-
-  <!-- Optional: lock body when age gate shown -->
   <style>.agelock{overflow:hidden}</style>
-
-  <!-- (Optional) Google AdSense loader -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264" crossorigin="anonymous"></script>
 {% endblock %}
 
 {% block content %}
@@ -38,12 +33,12 @@
   </main>
 
   <!-- Age Gate -->
-  <div id="age-gate" style="position:fixed;inset:0;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;z-index:99999;">
-    <div style="max-width:520px;text-align:center;padding:24px;">
+  <div id="age-gate" class="age-gate">
+    <div class="age-gate-inner">
       <h2>Adults Only (18+)</h2>
       <p>This site may display adult advertising. By entering, you confirm you are 18+ and consent to cookies.</p>
-      <button id="enterBtn" type="button" style="padding:.6rem 1rem;border-radius:.5rem;background:#2563eb;color:#fff;border:0;">Enter</button>
-      <noscript style="display:block;margin-top:12px;color:#ffb4b4;">
+      <button id="enterBtn" type="button" class="btn primary">Enter</button>
+      <noscript class="noscript-warn">
         JavaScript is required to enter this site.
       </noscript>
     </div>
@@ -51,10 +46,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
-  <!-- Infolinks -->
-  <script>var infolinks_pid = 3440424; var infolinks_wsid = 0;</script>
-  <script src="//resources.infolinks.com/js/infolinks_main.js"></script>
-
   <!-- Socket.IO client + role exposure for chat.js -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
   <script>window.ROLE = document.body.dataset.role || 'user';</script>
