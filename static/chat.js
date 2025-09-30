@@ -60,7 +60,55 @@
   const list     = document.getElementById("messages");
   const usersBox = document.getElementById("users");
   const backBtn  = document.getElementById("backToChat");
+  // ---------- Typing indicator (animated) ----------
+  const typingEl = document.createElement("div");
+typingEl.className = "typing";
+typingEl.setAttribute("aria-live", "polite");
+typingEl.style.display = "none";
+typingEl.innerHTML = `
+  <span class="who"></span>
+  <span class="dots" aria-hidden="true">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  </span>
+`;
 
+// attach to the messages panel, or fallback below the form
+const attachTarget =
+  document.querySelector(".panel:last-of-type") ||
+  document.getElementById("sendForm")?.parentElement ||
+  document.body;
+attachTarget.appendChild(typingEl);
+
+let othersTyping = new Set();
+let typingTimer = null;
+
+function renderTyping() {
+  const who = typingEl.querySelector(".who");
+  if (!who) return;
+
+  if (othersTyping.size === 0) {
+    typingEl.style.display = "none";
+    return;
+  }
+
+  const names = Array.from(othersTyping);
+  const label = names.length === 1
+    ? `${names[0]} is typing`
+    : `${names.slice(0,3).join(", ")}${names.length > 3 ? " and others" : ""} are typing`;
+  who.textContent = label + " ";
+  typingEl.style.display = "flex";
+}
+
+// update when OTHERS type
+socket.on("typing", ({ user, typing }) => {
+  if (!user) return;
+  if (typing) othersTyping.add(user); else othersTyping.delete(user);
+
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => { othersTyping.clear(); renderTyping(); }, 3000);
+
+  renderTyping();
+});
   socket.on("connect", () => socket.emit("roster_request"));
   socket.on("reconnect", () => socket.emit("roster_request"));
 
