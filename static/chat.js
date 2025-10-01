@@ -1,118 +1,147 @@
-// static/chat.js — DM toggle + avatar/gender/mod in Online + basic chat rendering
+// static/chat.js — clean, robust Socket.IO chat client
+// Works with your Flask-SocketIO events and current HTML structure.
 
 (function () {
-  // ---------- Utilities ----------
+  "use strict";
+
+  // ---------------- Utilities ----------------
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  const ROLE = String(window.ROLE || document.body.dataset.role || "user").toLowerCase();
+
+  function nowISO() {
+    return new Date().toISOString();
+  }
+
   function formatTS(ts) {
-    const d = new Date(ts);
+    const d = new Date(ts || Date.now());
     if (isNaN(d)) return "";
-    return d.toLocaleString("en-US", {
-      timeZone: "America/New_York",
-      year: "numeric", month: "short", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", hour12: true
+    return d.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
     });
   }
+
+  // Turn URLs into links (very safe/basic)
   function linkify(text) {
-    const urlRe = /\b(https?:\/\/[^\s]+)\b/gi;
-    return (text || "").replace(urlRe, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    const re = /\b(https?:\/\/[^\s<]+)\b/gi;
+    return (text || "").replace(re, '<a href="$1" target="_blank" rel="noopener">$1</a>');
   }
-  function atBottom(el) {
-    const threshold = 60;
+
+  // Keep scrolled to bottom unless user scrolled up
+  function atBottom(el, threshold = 60) {
     return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
   }
-  function scrollToBottom(el) { el.scrollTop = el.scrollHeight; }
+  function scrollToBottom(el) {
+    el.scrollTop = el.scrollHeight;
+  }
 
-  // ---------- Small UI helpers ----------
+  // Avatar + color helpers
   function hashColor(name) {
     let h = 0;
     for (let i = 0; i < (name || "").length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
     return `hsl(${h % 360} 70% 45%)`;
   }
-  function renderAvatar(avatarUrl, username) {
-    const initial = (username || "A").charAt(0).toUpperCase();
-    if (avatarUrl) {
-      return `<img class="avatar" src="${avatarUrl}" alt="${username || ""}" onerror="this.remove()">`;
+  function renderAvatar(url, username) {
+    const initial = (username || "?").charAt(0).toUpperCase();
+    if (url) {
+      return `<img class="avatar" src="${url}" alt="${username || ""}" onerror="this.remove()">`;
     }
     return `<span class="avatar avatar-fallback" style="background:${hashColor(username)}">${initial}</span>`;
   }
   function genderIcon(g) {
     switch ((g || "").toLowerCase()) {
-      case "male":      return '<i class="fa-solid fa-mars" title="Male"></i>';
-      case "female":    return '<i class="fa-solid fa-venus" title="Female"></i>';
+      case "male": return '<i class="fa-solid fa-mars" title="Male"></i>';
+      case "female": return '<i class="fa-solid fa-venus" title="Female"></i>';
       case "nonbinary": return '<i class="fa-solid fa-genderless" title="Non-binary"></i>';
-      case "trans":     return '<i class="fa-solid fa-transgender" title="Trans"></i>';
-      case "other":     return '<i class="fa-regular fa-circle-question" title="Other"></i>';
-      default:          return "";
+      case "trans": return '<i class="fa-solid fa-transgender" title="Trans"></i>';
+      default: return "";
     }
   }
   function modBadge(role) {
     return String(role).toLowerCase() === "mod"
-      ? '<span class="badge-mod" title="Moderator">MOD</span>'
-      : "";
+      ? '<span class="badge-mod" title="Moderator">MOD</span>' : "";
   }
 
-  // ---------- Socket connection ----------
-  const socket   = io({ transports: ["websocket", "polling"], upgrade: true });
-  const ROLE     = (String(window.ROLE || (document.body.dataset.role || "user"))).toLowerCase();
+  // ---------------- DOM ----------------
+  const form     = $("#sendForm");
+  const msgInput = $("#msgInput");
+  const list     = $("#messages");
+  const usersBox = $("#users");
+  const backBtn  = $("#backToChat");
 
-  // DOM
-  const form     = document.getElementById("sendForm");
-  const msgInput = document.getElementById("msgInput");
-  const list     = document.getElementById("messages");
-  const usersBox = document.getElementById("users");
-  const backBtn  = document.getElementById("backToChat");
-  // ---------- Typing indicator (animated) ----------
-  const typingEl = document.createElement("div");
-typingEl.className = "typing";
-typingEl.setAttribute("aria-live", "polite");
-typingEl.style.display = "none";
-typingEl.innerHTML = `
-  <span class="who"></span>
-  <span class="dots" aria-hidden="true">
-    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-  </span>
-`;
+  // ---------------- Socket ----------------
+  // Socket.IO client; will use websocket first, fallback to polling
+  const socket = io({ transports: ["websocket", "polling"], upgrade: true });
 
-// attach to the messages panel, or fallback below the form
-const attachTarget =
-  document.querySelector(".panel:last-of-type") ||
-  document.getElementById("sendForm")?.parentElement ||
-  document.body;
-attachTarget.appendChild(typingEl);
-
-let othersTyping = new Set();
-let typingTimer = null;
-
-function renderTyping() {
-  const who = typingEl.querySelector(".who");
-  if (!who) return;
-
-  if (othersTyping.size === 0) {
-    typingEl.style.display = "none";
-    return;
-  }
-
-  const names = Array.from(othersTyping);
-  const label = names.length === 1
-    ? `${names[0]} is typing`
-    : `${names.slice(0,3).join(", ")}${names.length > 3 ? " and others" : ""} are typing`;
-  who.textContent = label + " ";
-  typingEl.style.display = "flex";
-}
-
-// update when OTHERS type
-socket.on("typing", ({ user, typing }) => {
-  if (!user) return;
-  if (typing) othersTyping.add(user); else othersTyping.delete(user);
-
-  clearTimeout(typingTimer);
-  typingTimer = setTimeout(() => { othersTyping.clear(); renderTyping(); }, 3000);
-
-  renderTyping();
-});
-  socket.on("connect", () => socket.emit("roster_request"));
+  // Re-request roster on connect/reconnect
+  socket.on("connect", () => {
+    socket.emit("roster_request");
+    // Flush any offline-queued messages
+    flushQueue();
+  });
   socket.on("reconnect", () => socket.emit("roster_request"));
 
-  // ---------- DM helpers (your requested toggle) ----------
+  // ---------------- Typing indicator ----------------
+  const typingEl = document.createElement("div");
+  typingEl.className = "typing";
+  typingEl.setAttribute("aria-live", "polite");
+  typingEl.style.display = "none";
+  typingEl.innerHTML = `
+    <span class="who"></span>
+    <span class="dots" aria-hidden="true">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </span>
+  `;
+  (document.querySelector(".panel:last-of-type") || form?.parentElement || document.body)
+    .appendChild(typingEl);
+
+  let othersTyping = new Set();
+  let typingTimer = null;
+  function renderTyping() {
+    const who = typingEl.querySelector(".who");
+    if (!who) return;
+    if (othersTyping.size === 0) {
+      typingEl.style.display = "none";
+      return;
+    }
+    const names = Array.from(othersTyping);
+    const label = names.length === 1
+      ? `${names[0]} is typing`
+      : `${names.slice(0,3).join(", ")}${names.length > 3 ? " and others" : ""} are typing`;
+    who.textContent = label + " ";
+    typingEl.style.display = "flex";
+  }
+
+  // When others type
+  socket.on("typing", ({ user, typing }) => {
+    if (!user) return;
+    if (typing) othersTyping.add(user); else othersTyping.delete(user);
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => { othersTyping.clear(); renderTyping(); }, 3000);
+    renderTyping();
+  });
+
+  // Send our typing notifications (debounced)
+  let lastTyped = 0, typedSent = false;
+  msgInput?.addEventListener("input", () => {
+    const now = Date.now();
+    if (now - lastTyped > 250) {
+      socket.emit("typing", { typing: true });
+      typedSent = true;
+      lastTyped = now;
+      setTimeout(() => {
+        if (typedSent) socket.emit("typing", { typing: false });
+        typedSent = false;
+      }, 1200);
+    }
+  });
+
+  // ---------------- DM mode ----------------
   let pmTo = null;
 
   function startPM(username) {
@@ -131,30 +160,13 @@ socket.on("typing", ({ user, typing }) => {
   backBtn?.addEventListener("click", clearPM);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") clearPM(); });
 
+  // Support /w username message
   function parseWhisper(s) {
-    const m = s.match(/^\/w\s+(\S+)\s+([\s\S]+)/i);
+    const m = (s || "").match(/^\/w\s+(\S+)\s+([\s\S]+)/i);
     return m ? { to: m[1], text: m[2] } : null;
   }
 
-  // ---------- Submit ----------
-  form?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const txt = (msgInput.value || "").trim();
-    if (!txt) return;
-
-    const m = parseWhisper(txt);
-    if (m) {
-      socket.emit("pm", m);
-    } else if (pmTo) {
-      socket.emit("pm", { to: pmTo, text: txt });
-    } else {
-      socket.emit("chat", { text: txt });
-    }
-    msgInput.value = "";
-    msgInput.focus();
-  });
-
-  // ---------- Online roster (INCLUDES YOUR SNIPPET) ----------
+  // ---------------- Roster ----------------
   socket.on("online", (roster) => {
     if (!usersBox) return;
     usersBox.innerHTML = "";
@@ -167,9 +179,7 @@ socket.on("typing", ({ user, typing }) => {
       const avatar = isObj ? (u.avatar || "") : "";
 
       if (!name) return;
-
       const li = document.createElement("li");
-      // >>> Your requested snippet, integrated <<<
       li.innerHTML = `
         ${renderAvatar(avatar, name)}
         <span class="user-name">${name}</span>
@@ -187,7 +197,7 @@ socket.on("typing", ({ user, typing }) => {
     }
   });
 
-  // ---------- Messages ----------
+  // ---------------- Messages ----------------
   function renderMessage(m) {
     if (!list) return;
     const keepDown = atBottom(list);
@@ -195,7 +205,10 @@ socket.on("typing", ({ user, typing }) => {
     const id  = m.id;
     const who = m.user || m.username || "Anon";
     const ts  = formatTS(m.ts);
+    const isPM = !!m.to && !!m.from;
+
     const li  = document.createElement("li");
+    if (isPM) li.classList.add("pm");
     li.dataset.id = id || "";
 
     li.innerHTML = `
@@ -220,15 +233,93 @@ socket.on("typing", ({ user, typing }) => {
 
   socket.on("chat", renderMessage);
 
-  // delete (mod)
+  // Private messages (echo + to recipient)
+  socket.on("pm", (payload) => {
+    // Convert PM payload to the same shape used by renderMessage
+    const msg = {
+      id: payload.id || `pm-${Math.random().toString(36).slice(2)}`,
+      user: payload.from,
+      text: payload.text,
+      ts: payload.ts || nowISO(),
+      to: payload.to,
+      from: payload.from,
+      avatar: payload.avatar || ""
+    };
+    renderMessage(msg);
+  });
+
+  // Delete (mods)
   list?.addEventListener("click", (e) => {
     const btn = e.target.closest(".msg-del");
     if (!btn) return;
     const id = btn.getAttribute("data-id");
     if (id) socket.emit("delete_message", { id });
   });
-
   socket.on("message_deleted", ({ id }) => {
     document.querySelector(`li[data-id="${id}"]`)?.remove();
+  });
+
+  // ---------------- Send (with offline queue) ----------------
+  const outbox = []; // queued when socket not connected
+
+  function sendChatOrPM(txt) {
+    const whisper = parseWhisper(txt);
+    if (whisper) {
+      emitOrQueue("pm", whisper);
+    } else if (pmTo) {
+      emitOrQueue("pm", { to: pmTo, text: txt });
+    } else {
+      emitOrQueue("chat", { text: txt });
+    }
+  }
+
+  function emitOrQueue(event, payload) {
+    if (socket.connected) {
+      socket.emit(event, payload);
+    } else {
+      outbox.push({ event, payload });
+    }
+  }
+  function flushQueue() {
+    while (socket.connected && outbox.length) {
+      const item = outbox.shift();
+      socket.emit(item.event, item.payload);
+    }
+  }
+
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const txt = (msgInput.value || "").trim();
+    if (!txt) return;
+    sendChatOrPM(txt);
+    msgInput.value = "";
+    msgInput.focus();
+  });
+
+  // ---------------- Optional Emoji Picker ----------------
+  // If you included Emoji Button on chat.html head, this will attach.
+  try {
+    if (window.EmojiButton && $("#msgInput")) {
+      const picker = new EmojiButton({ position: "top-start" });
+      let trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.className = "emoji-btn";
+      trigger.innerHTML = "😊";
+      form?.insertBefore(trigger, form.lastElementChild);
+      trigger.addEventListener("click", () => picker.togglePicker(trigger));
+      picker.on("emoji", selection => {
+        msgInput.value += selection.emoji;
+        msgInput.focus();
+      });
+    }
+  } catch (_) { /* ignore */ }
+
+  // ---------------- Quality-of-life: hash PM ----------------
+  // Visiting /chat#@Alice auto-starts DM to Alice
+  window.addEventListener("load", () => {
+    const tag = decodeURIComponent(location.hash || "");
+    if (tag.startsWith("#@") && tag.length > 2) {
+      startPM(tag.slice(2));
+    }
   });
 })();
