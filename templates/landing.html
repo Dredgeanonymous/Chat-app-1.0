@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Hot Singles Chat — Real-time Chat Rooms{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sale.css') }}">
+{% endblock %}
 {% block content %}
-
+<!-- (rest of your landing page…) -->
 <main class="landing">
   <section class="hero">
     
@@ -9,7 +12,7 @@
     <h2>Created By Delvin. Anthony</h2>
 
     <div class="hero-inner">
-      <link rel="stylesheet" href="{{ url_for('static', filename='legal.css') }}">
+      
       <h1>Real-time Chat for Grown-Ups</h1>
       <p class="sub">Fast rooms, live typing, DMs, and mobile-friendly.</p>
       <div class="hero-cta">
