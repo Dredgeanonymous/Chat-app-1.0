@@ -1,15 +1,8 @@
 {% extends "base.html" %}
-
 {% block title %}Chat · Hot Singles Chat{% endblock %}
 
-{# Expose role and enable age gate #}
-{% block body_data %}data-role="{{ role|e }}" data-agegate="on"{% endblock %}
-
-{% block extra_head %}
-  <!-- Emoji picker -->
-  <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js" crossorigin="anonymous"></script>
-  <style>.agelock { overflow: hidden }</style>
-{% endblock %}
+{# Expose the role so chat.js can read it: window.ROLE fallback uses this #}
+{% block body_data %}data-role="{{ role|e }}"{% endblock %}
 
 {% block content %}
   <header class="topbar">
@@ -31,17 +24,18 @@
         <button type="submit">Send</button>
       </form>
 
-      <!-- Back to public chat (hidden until in DM) -->
-      <button id="backToChat" style="display:none;">Back to Public Chat</button>
+      <button id="backToChat" style="display:none; margin:10px;">
+        Back to Public Chat
+      </button>
     </section>
   </main>
 {% endblock %}
 
 {% block extra_scripts %}
-  <!-- Socket.IO client -->
+  <!-- Socket.IO client + expose role -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
   <script>window.ROLE = document.body.dataset.role || 'user';</script>
 
-  <!-- Chat logic -->
+  <!-- Your chat logic (uses #users, #messages, #sendForm, #msgInput, #backToChat) -->
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
 {% endblock %}
