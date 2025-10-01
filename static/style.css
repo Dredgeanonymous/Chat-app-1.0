@@ -7,6 +7,41 @@
    Works with existing .site.theme-dark / .site.theme-light
    ========================================================================== */
 
+
+/* Footer container */
+.site-footer {
+  padding: 16px;
+  text-align: center;
+  font-size: 0.9rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Dark theme footer */
+.theme-dark .site-footer {
+  background: #0b0b12;  /* dark background */
+  color: #ccc;          /* footer text color */
+}
+
+/* Light theme footer */
+.theme-light .site-footer {
+  background: #f1f5f9;  /* light gray background */
+  color: #333;
+}
+
+/* Footer links */
+.site-footer a {
+  text-decoration: none;
+  font-weight: 500;
+  margin: 0 6px;
+  transition: color 0.25s ease;
+}
+
+/* Colors for links */
+.theme-dark .site-footer a { color: #60a5fa; }     /* bright blue in dark mode */
+.theme-dark .site-footer a:hover { color: #93c5fd; }
+
+.theme-light .site-footer a { color: #2563eb; }    /* deep blue in light mode */
+.theme-light .site-footer a:hover { color: #1d4ed8; }
 /* --- Layout wrapper --- */
 .landing {
   display: grid;
