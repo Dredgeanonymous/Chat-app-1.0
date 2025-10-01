@@ -36,25 +36,5 @@
     </section>
   </main>
 
-  <!-- Age Gate -->
-  <div id="age-gate" class="age-gate">
-    <div class="age-gate-inner">
-      <h2>Adults Only (18+)</h2>
-      <p>This site may display adult advertising. By entering, you confirm you are 18+ and consent to cookies.</p>
-      <button id="enterBtn" type="button" class="btn primary">Enter</button>
-      <noscript class="noscript-warn">
-        JavaScript is required to enter this site.
-      </noscript>
-    </div>
-  </div>
-{% endblock %}
-
-{% block extra_scripts %}
-  <!-- Socket.IO client + role exposure for chat.js -->
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
-  <script>window.ROLE = document.body.dataset.role || 'user';</script>
-
-  <!-- Chat logic (expects #users, #messages, #sendForm, #msgInput, #backToChat) -->
-  <script src="{{ url_for('static', filename='chat.js') }}"></script>
-
+  
 {% endblock %}
