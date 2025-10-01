@@ -1,21 +1,23 @@
+{# templates/landing.html #}
 {% extends "base.html" %}
 
 {% block title %}Hot Singles Chat — Real-time Chat Rooms{% endblock %}
 
-{# Enable the age gate on this page #}
+{# Turn on the age gate for this page #}
 {% block body_data %}data-agegate="on"{% endblock %}
 
 {% block extra_head %}
+  {# Optional: extra landing styles (keep if you have sale.css) #}
   <link rel="stylesheet" href="{{ url_for('static', filename='sale.css') }}">
 {% endblock %}
 
 {% block content %}
 <main class="landing">
   <section class="hero">
-    <h1>Hot Singles Chat</h1>
-    <h2>Created By Delvin D.K Anthony</h2>
-
     <div class="hero-inner">
+      <h1>Hot Singles Chat</h1>
+      <h2>Created By Delvin D.K Anthony</h2>
+
       <h1>Real-time Chat for Grown-Ups</h1>
       <p class="sub">Fast rooms, live typing, DMs, and mobile-friendly.</p>
 
@@ -26,7 +28,7 @@
         <a class="btn ghost" href="#about">Learn more</a>
       </div>
 
-      <!-- Optional illustration -->
+      {# Optional decorative card / image area #}
       <div class="hero-art">
         <div class="hero-card"></div>
       </div>
@@ -37,7 +39,7 @@
     <article class="feature">
       <i class="fa-solid fa-bolt"></i>
       <h3>Fast & lightweight</h3>
-      <p>Low-latency Socket.IO with simple, modern UI.</p>
+      <p>Low-latency Socket.IO with a clean modern UI.</p>
     </article>
 
     <article class="feature">
@@ -58,73 +60,4 @@
     <a class="btn primary" href="{{ url_for('login') }}">I’m 18+ — Enter Chat</a>
   </section>
 </main>
-
-{# ── Age Gate overlay (shown when user hasn't consented) ── #}
-<div id="age-gate" class="age-gate" hidden>
-  <div class="age-gate-inner">
-    <h2>Adults Only (18+)</h2>
-    <p>
-      This site may display adult advertising. By entering, you confirm you are 18+
-      and consent to cookies for essential features (login, chat).
-      Read our <a href="{{ url_for('cookies') }}">Cookie Policy</a>.
-    </p>
-    <button id="enterBtn" type="button" class="btn primary">I’m 18+ — Enter</button>
-    <noscript class="noscript-warn">JavaScript is required to enter this site.</noscript>
-  </div>
-</div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-/**
- * Age Gate (same behavior as on chat page, but shown because body has data-agegate="on")
- * Persists consent to both cookie and localStorage so it sticks across subdomains.
- */
-(function () {
-  const AGE_ATTR = document.body.getAttribute('data-agegate');
-  const gate = document.getElementById('age-gate');
-  const btn  = document.getElementById('enterBtn');
-  const KEY  = 'age_ok';
-
-  if (!gate || AGE_ATTR !== 'on') return;
-
-  function hasConsent() {
-    const lc = (() => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; }})();
-    const ck = document.cookie.split(';').some(c => c.trim().startsWith(KEY + '=1'));
-    return lc || ck;
-  }
-
-  function setConsent(days = 30) {
-    const maxAge = 60 * 60 * 24 * days;
-    // cookie for current host
-    document.cookie = KEY + '=1; Max-Age=' + maxAge + '; Path=/; SameSite=Lax';
-    // cookie for root domain (if possible)
-    const parts = location.hostname.split('.');
-    if (parts.length >= 2) {
-      const root = '.' + parts.slice(-2).join('.');
-      document.cookie = KEY + '=1; Max-Age=' + maxAge + '; Path=/; Domain=' + root + '; SameSite=Lax';
-    }
-    try { localStorage.setItem(KEY, '1'); } catch {}
-  }
-
-  function showGate(on) {
-    gate.hidden = !on;
-    document.body.classList.toggle('agelock', on);
-  }
-
-  // init
-  if (hasConsent()) {
-    showGate(false);
-  } else {
-    showGate(true);
-  }
-
-  btn && btn.addEventListener('click', () => {
-    setConsent(30);
-    showGate(false);
-    // safety refresh to re-evaluate any logic depending on consent
-    setTimeout(() => { if (!hasConsent()) location.reload(); }, 50);
-  });
-})();
-</script>
 {% endblock %}
