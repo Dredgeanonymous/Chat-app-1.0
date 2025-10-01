@@ -3,6 +3,9 @@
 {% block title %}Login · Hot Singles Chat{% endblock %}
 
 {% block content %}
+
+{% extends "base.html" %}
+{% block body_data %}data-agegate="on"{% endblock %}
   <div class="card login-card">
     {% if error %}
       <div class="alert" role="alert">
