@@ -57,43 +57,4 @@
   <!-- Chat logic (expects #users, #messages, #sendForm, #msgInput, #backToChat) -->
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
 
-  <!-- Age gate logic -->
-  <script data-cfasync="false">
-  document.addEventListener('DOMContentLoaded', function () {
-    const KEY  = 'age_ok';
-    const gate = document.getElementById('age-gate');
-    const btn  = document.getElementById('enterBtn');
-
-    function hasConsent() {
-      const inStorage = localStorage.getItem(KEY) === '1';
-      const inCookie  = document.cookie.split(';').some(c => c.trim().startsWith(KEY + '='));
-      return inStorage || inCookie;
-    }
-    function setConsent(days = 30) {
-      const maxAge = 60*60*24*days;
-      document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
-      const host = location.hostname.split('.');
-      if (host.length >= 2) {
-        const root = '.' + host.slice(-2).join('.');
-        document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; Domain=${root}; SameSite=Lax`;
-      }
-      try { localStorage.setItem(KEY, '1'); } catch(_) {}
-    }
-
-    if (hasConsent()) {
-      gate.style.display = 'none';
-      document.body.classList.remove('agelock');
-    } else {
-      gate.style.display = 'flex';
-      document.body.classList.add('agelock');
-    }
-
-    btn?.addEventListener('click', () => {
-      setConsent(30);
-      gate.style.display = 'none';
-      document.body.classList.remove('agelock');
-      setTimeout(() => { if (!hasConsent()) location.reload(); }, 50);
-    });
-  });
-  </script>
 {% endblock %}
