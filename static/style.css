@@ -1,3 +1,32 @@
+/* Landing Page Background */
+.landing {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  /* Background photo */
+  background: url("{{ url_for('static', filename='landing-bg.jpg') }}") no-repeat center center;
+  background-size: cover;
+}
+
+/* Dark overlay for readability */
+.landing::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5); /* adjust opacity */
+  z-index: 0;
+}
+
+.landing > * {
+  position: relative;
+  z-index: 1; /* ensures content shows above overlay */
+}
+
 /* ==========================================================================
    Global Reset & Base
    ========================================================================== */
