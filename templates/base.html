@@ -1,10 +1,10 @@
-
-
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- PWA: manifest + service worker -->
+  <!-- Manifest -->
   <link rel="manifest" href="{{ url_for('manifest') }}">
+
+  <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register("{{ url_for('sw') }}");
@@ -19,7 +19,7 @@
   <meta name="description" content="Live chat with singles. Real people, real time.">
   <link rel="icon" href="{{ url_for('static', filename='icon.png') }}">
 
-  <!-- Site styles -->
+  <!-- Styles -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
   <!-- Icons -->
@@ -27,15 +27,13 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         crossorigin="anonymous"/>
 
-  <!-- (Optional) Google AdSense -->
-  <script async
-    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264"
-    crossorigin="anonymous"></script>
+  <!-- Google AdSense (Auto Ads; optional) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5795465450797264" crossorigin="anonymous"></script>
 
   {% block extra_head %}{% endblock %}
 </head>
-
 <body class="site theme-dark" {% block body_data %}{% endblock %}>
+
   <header class="site-header">
     <a href="{{ url_for('landing') }}" class="brand">
       <span class="logo-dot"></span>
@@ -89,40 +87,20 @@
       });
     })();
 
-    // Cookie consent
+    // Cookie consent (footer + banner)
     (function () {
       const KEY = "cookie_ok=1";
       if (!document.cookie.includes("cookie_ok=")) {
-        document.getElementById("cookie-banner").hidden = false;
+        const banner = document.getElementById("cookie-banner");
+        banner.hidden = false;
         document.getElementById("cookie-accept").onclick = () => {
           document.cookie = KEY + "; Max-Age=" + (60*60*24*365) + "; path=/; SameSite=Lax";
-          document.getElementById("cookie-banner").hidden = true;
+          banner.hidden = true;
         };
       }
     })();
-    <!- Age Gate -->
-  <div id="age-gate" class="age-gate">
-    <div class="age-gate-inner">
-      <h2>Adults Only (18+)</h2>
-      <p>This site may display adult advertising. By entering, you confirm you are 18+ and consent to cookies.</p>
-      <button id="enterBtn" type="button" class="btn primary">Enter</button>
-      <noscript class="noscript-warn">
-        JavaScript is required to enter this site.
-      </noscript>
-    </div>
-  </div>
-{% endblock %}
-
-{% block extra_scripts %}
-  <!-- Socket.IO client + role exposure for chat.js -->
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
-  <script>window.ROLE = document.body.dataset.role || 'user';</script>
-
-  <!-- Chat logic (expects #users, #messages, #sendForm, #msgInput, #backToChat) -->
-  <script src="{{ url_for('static', filename='chat.js') }}"></script>
-
   </script>
 
   {% block extra_scripts %}{% endblock %}
 </body>
-  </html>
+</html>
