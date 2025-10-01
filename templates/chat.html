@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Chat · Hot Singles Chat{% endblock %}
 
-{# Expose role to JS so static/chat.js can show mod actions, etc. #}
+{# Expose the role for client-side logic (mods get delete, etc.) #}
 {% block body_data %}data-role="{{ role|e }}"{% endblock %}
 
 {% block content %}
   <header class="topbar">
     <div>
       Logged in as <strong>{{ username|e }}</strong>
-      <span style="opacity:.75;">({{ role|e }})</span>
+      <span style="opacity:.7;">({{ role|e }})</span>
     </div>
     <a class="btn" href="{{ url_for('logout') }}">Logout</a>
   </header>
@@ -20,18 +20,37 @@
       <ul id="users" class="users" aria-live="polite" aria-label="Online users list"></ul>
     </section>
 
-    <!-- RIGHT: Messages + composer -->
+    <!-- RIGHT: Chat stream + composer -->
     <section class="panel" aria-labelledby="chat-heading">
-      <h2 id="chat-heading" class="sr-only" style="position:absolute;left:-9999px;">Chat</h2>
+      <h2 id="chat-heading" class="sr-only" style="position:absolute;left:-9999px;">
+        Chat
+      </h2>
 
+      <!-- Message list (chat.js appends here) -->
       <ul id="messages" class="messages" aria-live="polite" aria-label="Messages"></ul>
 
+      <!-- Composer (IDs must match chat.js expectations) -->
       <form id="sendForm" class="send" autocomplete="off">
-        <input id="msgInput" type="text" placeholder="Type a message" aria-label="Message input">
+        <input
+          id="msgInput"
+          type="text"
+          placeholder="Type a message"
+          aria-label="Message input"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          maxlength="500"
+        >
         <button type="submit" aria-label="Send message">Send</button>
       </form>
 
-      <button id="backToChat" style="display:none; margin:10px;" type="button" aria-label="Back to public chat">
+      <!-- Back from DM button (chat.js toggles visibility) -->
+      <button
+        id="backToChat"
+        type="button"
+        style="display:none; margin:10px;"
+        aria-label="Back to public chat"
+      >
         Back to Public Chat
       </button>
     </section>
@@ -42,9 +61,12 @@
   <!-- Socket.IO client -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
 
-  <!-- Provide role to chat.js (fallback if body dataset not read) -->
+  <!-- Provide role to chat.js (fallback if body dataset isn't read) -->
   <script>window.ROLE = document.body.dataset.role || 'user';</script>
 
-  <!-- Your chat logic (expects #users, #messages, #sendForm, #msgInput, #backToChat) -->
+  <!-- OPTIONAL: Emoji picker (if you want 😊 button auto-wired by chat.js) -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js" crossorigin="anonymous"></script> -->
+
+  <!-- Chat logic (expects #users, #messages, #sendForm, #msgInput, #backToChat) -->
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
 {% endblock %}
