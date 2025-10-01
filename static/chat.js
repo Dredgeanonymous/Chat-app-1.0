@@ -1,90 +1,76 @@
-// static/chat.js — clean, robust Socket.IO chat client
-// Works with your Flask-SocketIO events and current HTML structure.
+// static/chat.js — robust chat client for Flask-SocketIO
+// Works with templates/chat.html that define:
+//   #users, #messages, #sendForm, #msgInput, #backToChat
+// Expects server events: 'chat_history', 'chat', 'pm', 'online',
+// 'message_deleted', 'typing', and accepts 'chat', 'pm', 'delete_message'.
 
 (function () {
   "use strict";
 
-  // ---------------- Utilities ----------------
-  const $ = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  // ---------------- Shortcuts ----------------
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
+  // Role (for mod-only actions)
   const ROLE = String(window.ROLE || document.body.dataset.role || "user").toLowerCase();
 
-  function nowISO() {
-    return new Date().toISOString();
-  }
+  // DOM
+  const usersBox = $("#users");
+  const list     = $("#messages");
+  const form     = $("#sendForm");
+  const msgInput = $("#msgInput");
+  const backBtn  = $("#backToChat");
+
+  // Socket
+  const socket = io({ transports: ["websocket", "polling"], upgrade: true });
+
+  // ---------------- Utilities ----------------
+  function nowISO () { return new Date().toISOString(); }
 
   function formatTS(ts) {
     const d = new Date(ts || Date.now());
     if (isNaN(d)) return "";
     return d.toLocaleString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
+      year: "numeric", month: "short", day: "2-digit",
+      hour: "2-digit", minute: "2-digit"
     });
   }
 
-  // Turn URLs into links (very safe/basic)
   function linkify(text) {
     const re = /\b(https?:\/\/[^\s<]+)\b/gi;
     return (text || "").replace(re, '<a href="$1" target="_blank" rel="noopener">$1</a>');
   }
 
-  // Keep scrolled to bottom unless user scrolled up
   function atBottom(el, threshold = 60) {
     return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
   }
-  function scrollToBottom(el) {
-    el.scrollTop = el.scrollHeight;
-  }
+  function scrollToBottom(el) { el.scrollTop = el.scrollHeight; }
 
-  // Avatar + color helpers
+  // Avatars & accents
   function hashColor(name) {
     let h = 0;
     for (let i = 0; i < (name || "").length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
     return `hsl(${h % 360} 70% 45%)`;
   }
-  function renderAvatar(url, username) {
+  function avatarHTML(url, username) {
     const initial = (username || "?").charAt(0).toUpperCase();
-    if (url) {
-      return `<img class="avatar" src="${url}" alt="${username || ""}" onerror="this.remove()">`;
-    }
+    if (url) return `<img class="avatar" src="${url}" alt="${username || ""}" onerror="this.remove()">`;
     return `<span class="avatar avatar-fallback" style="background:${hashColor(username)}">${initial}</span>`;
   }
   function genderIcon(g) {
     switch ((g || "").toLowerCase()) {
-      case "male": return '<i class="fa-solid fa-mars" title="Male"></i>';
-      case "female": return '<i class="fa-solid fa-venus" title="Female"></i>';
+      case "male":      return '<i class="fa-solid fa-mars" title="Male"></i>';
+      case "female":    return '<i class="fa-solid fa-venus" title="Female"></i>';
       case "nonbinary": return '<i class="fa-solid fa-genderless" title="Non-binary"></i>';
-      case "trans": return '<i class="fa-solid fa-transgender" title="Trans"></i>';
-      default: return "";
+      case "trans":     return '<i class="fa-solid fa-transgender" title="Trans"></i>';
+      default:          return "";
     }
   }
   function modBadge(role) {
     return String(role).toLowerCase() === "mod"
-      ? '<span class="badge-mod" title="Moderator">MOD</span>' : "";
+      ? '<span class="badge-mod" title="Moderator">MOD</span>'
+      : "";
   }
-
-  // ---------------- DOM ----------------
-  const form     = $("#sendForm");
-  const msgInput = $("#msgInput");
-  const list     = $("#messages");
-  const usersBox = $("#users");
-  const backBtn  = $("#backToChat");
-
-  // ---------------- Socket ----------------
-  // Socket.IO client; will use websocket first, fallback to polling
-  const socket = io({ transports: ["websocket", "polling"], upgrade: true });
-
-  // Re-request roster on connect/reconnect
-  socket.on("connect", () => {
-    socket.emit("roster_request");
-    // Flush any offline-queued messages
-    flushQueue();
-  });
-  socket.on("reconnect", () => socket.emit("roster_request"));
 
   // ---------------- Typing indicator ----------------
   const typingEl = document.createElement("div");
@@ -95,13 +81,14 @@
     <span class="who"></span>
     <span class="dots" aria-hidden="true">
       <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-    </span>
-  `;
+    </span>`;
+  // attach under right panel or near form
   (document.querySelector(".panel:last-of-type") || form?.parentElement || document.body)
     .appendChild(typingEl);
 
   let othersTyping = new Set();
   let typingTimer = null;
+
   function renderTyping() {
     const who = typingEl.querySelector(".who");
     if (!who) return;
@@ -126,23 +113,23 @@
     renderTyping();
   });
 
-  // Send our typing notifications (debounced)
-  let lastTyped = 0, typedSent = false;
+  // Send our typing signals (debounced)
+  let lastTyped = 0, sentTyping = false;
   msgInput?.addEventListener("input", () => {
     const now = Date.now();
     if (now - lastTyped > 250) {
       socket.emit("typing", { typing: true });
-      typedSent = true;
+      sentTyping = true;
       lastTyped = now;
       setTimeout(() => {
-        if (typedSent) socket.emit("typing", { typing: false });
-        typedSent = false;
+        if (sentTyping) socket.emit("typing", { typing: false });
+        sentTyping = false;
       }, 1200);
     }
   });
 
   // ---------------- DM mode ----------------
-  let pmTo = null;
+  let pmTo = null; // username string or null
 
   function startPM(username) {
     pmTo = username;
@@ -160,13 +147,13 @@
   backBtn?.addEventListener("click", clearPM);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") clearPM(); });
 
-  // Support /w username message
+  // /w <user> <message>
   function parseWhisper(s) {
     const m = (s || "").match(/^\/w\s+(\S+)\s+([\s\S]+)/i);
     return m ? { to: m[1], text: m[2] } : null;
   }
 
-  // ---------------- Roster ----------------
+  // ---------------- Online roster ----------------
   socket.on("online", (roster) => {
     if (!usersBox) return;
     usersBox.innerHTML = "";
@@ -178,10 +165,9 @@
       const gender = isObj ? (u.gender || "") : "";
       const avatar = isObj ? (u.avatar || "") : "";
 
-      if (!name) return;
       const li = document.createElement("li");
       li.innerHTML = `
-        ${renderAvatar(avatar, name)}
+        ${avatarHTML(avatar, name)}
         <span class="user-name">${name}</span>
         ${modBadge(role)}
         ${gender ? `<span class="g">${genderIcon(gender)} <small>${gender}</small></span>` : ""}
@@ -197,30 +183,55 @@
     }
   });
 
+  // ---------------- Reactions (client-side only; server optional) ----------------
+  const REACTIONS = ["👍", "❤️", "😂"];
+  function reactionsBarHTML(id) {
+    // If you later hook server events for reactions, you can add counts here
+    return `
+      <div class="reactions" data-for="${id}">
+        ${REACTIONS.map(e => `<button class="rx-btn" data-emoji="${e}" data-id="${id}" type="button">${e}</button>`).join("")}
+      </div>
+    `;
+  }
+  function handleReactionClick(e) {
+    const btn = e.target.closest(".rx-btn");
+    if (!btn) return;
+    const emoji = btn.getAttribute("data-emoji");
+    const id    = btn.getAttribute("data-id");
+    // If you implement reactions server-side, emit here:
+    // socket.emit("react", { id, emoji });
+    // For now we do a playful local bump effect:
+    btn.style.transform = "scale(1.15)";
+    setTimeout(() => (btn.style.transform = ""), 120);
+  }
+  list?.addEventListener("click", handleReactionClick);
+
   // ---------------- Messages ----------------
   function renderMessage(m) {
     if (!list) return;
     const keepDown = atBottom(list);
 
-    const id  = m.id;
-    const who = m.user || m.username || "Anon";
-    const ts  = formatTS(m.ts);
+    const id   = m.id || `m-${Math.random().toString(36).slice(2)}`;
+    const who  = m.user || m.username || "Anon";
+    const ts   = formatTS(m.ts);
     const isPM = !!m.to && !!m.from;
 
-    const li  = document.createElement("li");
+    const li = document.createElement("li");
     if (isPM) li.classList.add("pm");
-    li.dataset.id = id || "";
+    li.dataset.id = id;
 
     li.innerHTML = `
       <div class="msg-row">
-        ${renderAvatar(m.avatar, who)}
+        ${avatarHTML(m.avatar, who)}
         <strong>${who}</strong>
         <span class="msg-time" title="${m.ts || ""}">${ts}</span>
-        ${ROLE === "mod" ? `<button class="mini danger msg-del" data-id="${id || ""}" title="Delete">✖</button>` : ""}
+        ${ROLE === "mod" ? `<button class="mini danger msg-del" data-id="${id}" title="Delete">✖</button>` : ""}
       </div>
       <div class="msg-text">${linkify(m.text || "")}</div>
+      ${reactionsBarHTML(id)}
     `;
     list.appendChild(li);
+
     if (keepDown) scrollToBottom(list);
   }
 
@@ -233,9 +244,8 @@
 
   socket.on("chat", renderMessage);
 
-  // Private messages (echo + to recipient)
+  // Private messages (server echoes to sender + recipient)
   socket.on("pm", (payload) => {
-    // Convert PM payload to the same shape used by renderMessage
     const msg = {
       id: payload.id || `pm-${Math.random().toString(36).slice(2)}`,
       user: payload.from,
@@ -259,32 +269,23 @@
     document.querySelector(`li[data-id="${id}"]`)?.remove();
   });
 
-  // ---------------- Send (with offline queue) ----------------
-  const outbox = []; // queued when socket not connected
-
-  function sendChatOrPM(txt) {
-    const whisper = parseWhisper(txt);
-    if (whisper) {
-      emitOrQueue("pm", whisper);
-    } else if (pmTo) {
-      emitOrQueue("pm", { to: pmTo, text: txt });
-    } else {
-      emitOrQueue("chat", { text: txt });
-    }
-  }
-
+  // ---------------- Send + offline outbox ----------------
+  const outbox = [];
   function emitOrQueue(event, payload) {
-    if (socket.connected) {
-      socket.emit(event, payload);
-    } else {
-      outbox.push({ event, payload });
-    }
+    if (socket.connected) socket.emit(event, payload);
+    else outbox.push({ event, payload });
   }
   function flushQueue() {
     while (socket.connected && outbox.length) {
       const item = outbox.shift();
       socket.emit(item.event, item.payload);
     }
+  }
+  function sendChatOrPM(txt) {
+    const m = parseWhisper(txt);
+    if (m) emitOrQueue("pm", m);
+    else if (pmTo) emitOrQueue("pm", { to: pmTo, text: txt });
+    else emitOrQueue("chat", { text: txt });
   }
 
   form?.addEventListener("submit", (e) => {
@@ -296,16 +297,27 @@
     msgInput.focus();
   });
 
+  socket.on("connect", () => {
+    socket.emit("roster_request");
+    flushQueue();
+  });
+  socket.on("reconnect", () => socket.emit("roster_request"));
+
   // ---------------- Optional Emoji Picker ----------------
-  // If you included Emoji Button on chat.html head, this will attach.
+  // If you included Emoji Button via <script> on the page, this will attach automatically.
   try {
-    if (window.EmojiButton && $("#msgInput")) {
+    if (window.EmojiButton && form && msgInput) {
       const picker = new EmojiButton({ position: "top-start" });
-      let trigger = document.createElement("button");
-      trigger.type = "button";
-      trigger.className = "emoji-btn";
-      trigger.innerHTML = "😊";
-      form?.insertBefore(trigger, form.lastElementChild);
+      let trigger = $("#emojiBtn");
+      if (!trigger) {
+        // Add a trigger button if the page doesn't have one
+        trigger = document.createElement("button");
+        trigger.type = "button";
+        trigger.id = "emojiBtn";
+        trigger.className = "emoji-btn";
+        trigger.innerHTML = "😊";
+        form.insertBefore(trigger, form.lastElementChild);
+      }
       trigger.addEventListener("click", () => picker.togglePicker(trigger));
       picker.on("emoji", selection => {
         msgInput.value += selection.emoji;
@@ -314,8 +326,8 @@
     }
   } catch (_) { /* ignore */ }
 
-  // ---------------- Quality-of-life: hash PM ----------------
-  // Visiting /chat#@Alice auto-starts DM to Alice
+  // ---------------- Hash PM shortcut ----------------
+  // Visiting /chat#@Alice auto starts a DM to Alice
   window.addEventListener("load", () => {
     const tag = decodeURIComponent(location.hash || "");
     if (tag.startsWith("#@") && tag.length > 2) {
