@@ -6,7 +6,84 @@
    Landing Page Styles (HotSinglesChat)
    Works with existing .site.theme-dark / .site.theme-light
    ========================================================================== */
+/* --- Cookie banner --- */
+.cookie-banner {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 50;
+  background: rgba(15, 18, 28, 0.96);
+  color: #e5e7eb;
+  padding: 12px 16px;
+  box-shadow: 0 -8px 30px rgba(0,0,0,.35);
+}
+.cookie-banner .cookie-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.cookie-banner a { color: #93c5fd; text-decoration: underline; }
+.cookie-banner .btn.primary {
+  background: #2563eb;
+  color: #fff;
+  border: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+}
 
+/* --- Age Gate overlay --- */
+.age-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;            /* becomes visible when not hidden */
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  background: rgba(8, 10, 18, 0.72);
+}
+.age-gate:not([hidden]) { display: flex; }
+
+.age-gate-inner {
+  width: min(560px, 92vw);
+  background: linear-gradient(180deg, #0b0f19 0%, #111827 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 28px 22px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+  text-align: center;
+}
+.age-gate-inner h2 {
+  margin: 0 0 8px;
+  color: #f8fafc;
+  font-size: 1.6rem;
+  letter-spacing: .2px;
+}
+.age-gate-inner p {
+  margin: 0 0 18px;
+  color: #cbd5e1;
+}
+.age-gate-inner .btn.primary {
+  background: #10b981; /* teal green */
+  color: #061017;
+  border: 0;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(16,185,129,.35);
+}
+
+/* Prevent scroll when gate is active */
+.agelock { overflow: hidden; }
+
+/* Footer colors (optional – from earlier) */
+.theme-dark .site-footer a { color: #60a5fa; }
+.theme-dark .site-footer a:hover { color: #93c5fd; }
+.theme-light .site-footer a { color: #2563eb; }
+.theme-light .site-footer a:hover { color: #1d4ed8; }
 
 /* Footer container */
 .site-footer {
