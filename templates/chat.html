@@ -2,13 +2,13 @@
 
 {% block title %}Chat · Hot Singles Chat{% endblock %}
 
-{# Expose the role to chat.js via data attribute #}
-{% block body_data %}data-role="{{ role|e }}"{% endblock %}
+{# Expose role and enable age gate #}
+{% block body_data %}data-role="{{ role|e }}" data-agegate="on"{% endblock %}
 
 {% block extra_head %}
-  <!-- Emoji picker (before chat.js uses it) -->
+  <!-- Emoji picker -->
   <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js" crossorigin="anonymous"></script>
-  <style>.agelock{overflow:hidden}</style>
+  <style>.agelock { overflow: hidden }</style>
 {% endblock %}
 
 {% block content %}
@@ -31,10 +31,17 @@
         <button type="submit">Send</button>
       </form>
 
-      <!-- Back to chat button (shown when DMing) -->
+      <!-- Back to public chat (hidden until in DM) -->
       <button id="backToChat" style="display:none;">Back to Public Chat</button>
     </section>
   </main>
+{% endblock %}
 
-  
+{% block extra_scripts %}
+  <!-- Socket.IO client -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+  <script>window.ROLE = document.body.dataset.role || 'user';</script>
+
+  <!-- Chat logic -->
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
 {% endblock %}
