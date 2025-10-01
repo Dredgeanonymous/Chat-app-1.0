@@ -109,6 +109,56 @@
       </noscript>
     </div>
   </div>
+
+  <script>
+    // AGE GATE — shows only if the page opts in via body[data-agegate="on"]
+    (function () {
+      const wantsGate = (document.body.dataset.agegate || '').toLowerCase() === 'on';
+      if (!wantsGate) return;
+
+      const KEY  = 'age_ok';
+      const gate = document.getElementById('age-gate');
+      const btn  = document.getElementById('enterBtn');
+
+      function hasConsent() {
+        try {
+          const ls = localStorage.getItem(KEY) === '1';
+          const ck = document.cookie.split(';').some(c => c.trim().startsWith(KEY + '='));
+          return ls || ck;
+        } catch (_) {
+          return document.cookie.split(';').some(c => c.trim().startsWith(KEY + '='));
+        }
+      }
+
+      function setConsent(days = 30) {
+        const maxAge = 60*60*24*days;
+        // cookie for current host
+        document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
+        // cookie for root domain (if applicable)
+        const parts = location.hostname.split('.');
+        if (parts.length >= 2) {
+          const root = '.' + parts.slice(-2).join('.');
+          document.cookie = `${KEY}=1; Max-Age=${maxAge}; Path=/; Domain=${root}; SameSite=Lax`;
+        }
+        try { localStorage.setItem(KEY, '1'); } catch(_) {}
+      }
+
+      if (hasConsent()) {
+        gate.hidden = true;
+        document.body.classList.remove('agelock');
+      } else {
+        gate.hidden = false;
+        document.body.classList.add('agelock');
+      }
+
+      btn?.addEventListener('click', () => {
+        setConsent(30);
+        gate.hidden = true;
+        document.body.classList.remove('agelock');
+        setTimeout(() => { if (!hasConsent()) location.reload(); }, 50);
+      });
+    })();
+  </script>
   </script>
 
   {% block extra_scripts %}{% endblock %}
