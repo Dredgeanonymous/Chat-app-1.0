@@ -1,32 +1,33 @@
 {% extends "base.html" %}
+
 {% block title %}Hot Singles Chat — Real-time Chat Rooms{% endblock %}
+
+{# Enable the age gate on this page #}
+{% block body_data %}data-agegate="on"{% endblock %}
+
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sale.css') }}">
 {% endblock %}
-{% block content %}
-{% extends "base.html" %}
-{% block body_data %}data-agegate="on"{% endblock %}
 
-<!-- (rest of your landing page…) -->
+{% block content %}
 <main class="landing">
   <section class="hero">
-    
     <h1>Hot Singles Chat</h1>
     <h2>Created By Delvin D.K Anthony</h2>
 
     <div class="hero-inner">
-      
       <h1>Real-time Chat for Grown-Ups</h1>
       <p class="sub">Fast rooms, live typing, DMs, and mobile-friendly.</p>
+
       <div class="hero-cta">
         <a class="btn primary xl" href="{{ url_for('login') }}">
           <i class="fa-solid fa-comments"></i> Enter Chat
         </a>
         <a class="btn ghost" href="#about">Learn more</a>
       </div>
-      <!-- Optional-->
+
+      <!-- Optional illustration -->
       <div class="hero-art">
-        <!-- Replace with your asset -->
         <div class="hero-card"></div>
       </div>
     </div>
@@ -39,12 +40,12 @@
       <p>Low-latency Socket.IO with simple, modern UI.</p>
     </article>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='sale.css') }}">
     <article class="feature">
       <i class="fa-solid fa-lock"></i>
       <h3>Privacy-aware</h3>
       <p>Minimal data; you choose a display name. See our Privacy Policy.</p>
     </article>
+
     <article class="feature">
       <i class="fa-solid fa-mobile-screen"></i>
       <h3>Works everywhere</h3>
@@ -56,7 +57,5 @@
     <p>Adults only (18+). By continuing you confirm you’re of legal age.</p>
     <a class="btn primary" href="{{ url_for('login') }}">I’m 18+ — Enter Chat</a>
   </section>
-  
 </main>
-
 {% endblock %}
