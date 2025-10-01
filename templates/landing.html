@@ -4,6 +4,10 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='sale.css') }}">
 {% endblock %}
 {% block content %}
+
+{% extends "base.html" %}
+{% block body_data %}data-agegate="on"{% endblock %}
+
 <!-- (rest of your landing page…) -->
 <main class="landing">
   <section class="hero">
