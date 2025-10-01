@@ -38,9 +38,13 @@ html, body {
 }
 
 /* Theme shells */
-.site.theme-dark { color: #eaeaea; background: #0d0d0d; }
-.site.theme-light { color: #0e141b; background: #f7f7f8; }
-
+/* Universal background image */
+.site {
+  background: url("../static/bg.jpg") no-repeat center center fixed;
+  background-size: cover;
+  background-attachment: fixed;
+  color: #eaeaea; /* text color */
+}
 /* ==========================================================================
    Header / Navigation / Footer
    ========================================================================== */
