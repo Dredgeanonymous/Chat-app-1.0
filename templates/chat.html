@@ -1,30 +1,37 @@
 {% extends "base.html" %}
 {% block title %}Chat · Hot Singles Chat{% endblock %}
 
-{# Expose the role so chat.js can read it: window.ROLE fallback uses this #}
+{# Expose role to JS so static/chat.js can show mod actions, etc. #}
 {% block body_data %}data-role="{{ role|e }}"{% endblock %}
 
 {% block content %}
   <header class="topbar">
-    <div>Logged in as <strong>{{ username|e }}</strong> ({{ role|e }})</div>
+    <div>
+      Logged in as <strong>{{ username|e }}</strong>
+      <span style="opacity:.75;">({{ role|e }})</span>
+    </div>
     <a class="btn" href="{{ url_for('logout') }}">Logout</a>
   </header>
 
-  <main class="layout">
-    <section class="panel">
-      <h2>Online</h2>
-      <ul id="users" class="users"></ul>
+  <main class="layout" role="main">
+    <!-- LEFT: Online users -->
+    <section class="panel" aria-labelledby="online-heading">
+      <h2 id="online-heading">Online</h2>
+      <ul id="users" class="users" aria-live="polite" aria-label="Online users list"></ul>
     </section>
 
-    <section class="panel">
-      <ul id="messages" class="messages"></ul>
+    <!-- RIGHT: Messages + composer -->
+    <section class="panel" aria-labelledby="chat-heading">
+      <h2 id="chat-heading" class="sr-only" style="position:absolute;left:-9999px;">Chat</h2>
 
-      <form id="sendForm" class="send">
-        <input id="msgInput" placeholder="Type a message" autocomplete="off">
-        <button type="submit">Send</button>
+      <ul id="messages" class="messages" aria-live="polite" aria-label="Messages"></ul>
+
+      <form id="sendForm" class="send" autocomplete="off">
+        <input id="msgInput" type="text" placeholder="Type a message" aria-label="Message input">
+        <button type="submit" aria-label="Send message">Send</button>
       </form>
 
-      <button id="backToChat" style="display:none; margin:10px;">
+      <button id="backToChat" style="display:none; margin:10px;" type="button" aria-label="Back to public chat">
         Back to Public Chat
       </button>
     </section>
@@ -32,10 +39,12 @@
 {% endblock %}
 
 {% block extra_scripts %}
-  <!-- Socket.IO client + expose role -->
+  <!-- Socket.IO client -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+
+  <!-- Provide role to chat.js (fallback if body dataset not read) -->
   <script>window.ROLE = document.body.dataset.role || 'user';</script>
 
-  <!-- Your chat logic (uses #users, #messages, #sendForm, #msgInput, #backToChat) -->
+  <!-- Your chat logic (expects #users, #messages, #sendForm, #msgInput, #backToChat) -->
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
 {% endblock %}
