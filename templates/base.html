@@ -35,7 +35,7 @@
   {% block extra_head %}{% endblock %}
 </head>
 
-<body class="site theme-dark" {% block body_data %}{% endblock %}>
+<body class="site theme-dark" {% block body_data %}data-agegate="on"{% endblock %}>
   <header class="site-header">
     <a href="{{ url_for('landing') }}" class="brand">
       <span class="logo-dot"></span>
