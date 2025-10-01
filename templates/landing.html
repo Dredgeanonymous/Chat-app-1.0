@@ -1,13 +1,10 @@
-{# templates/landing.html #}
 {% extends "base.html" %}
 
 {% block title %}Hot Singles Chat — Real-time Chat Rooms{% endblock %}
 
-{# Turn on the age gate for this page #}
 {% block body_data %}data-agegate="on"{% endblock %}
 
 {% block extra_head %}
-  {# Optional: extra landing styles (keep if you have sale.css) #}
   <link rel="stylesheet" href="{{ url_for('static', filename='sale.css') }}">
 {% endblock %}
 
@@ -21,6 +18,12 @@
       <h1>Real-time Chat for Grown-Ups</h1>
       <p class="sub">Fast rooms, live typing, DMs, and mobile-friendly.</p>
 
+      <!-- NEW welcoming message -->
+      <div class="welcome-box">
+        <p>👋 Welcome to <strong>Hot Singles Chat</strong> — where real people connect in real time.  
+        Jump in, meet new friends, and start chatting instantly!</p>
+      </div>
+
       <div class="hero-cta">
         <a class="btn primary xl" href="{{ url_for('login') }}">
           <i class="fa-solid fa-comments"></i> Enter Chat
@@ -28,7 +31,6 @@
         <a class="btn ghost" href="#about">Learn more</a>
       </div>
 
-      {# Optional decorative card / image area #}
       <div class="hero-art">
         <div class="hero-card"></div>
       </div>
