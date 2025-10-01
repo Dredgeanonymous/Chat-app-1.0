@@ -12,13 +12,6 @@ html, body {
 .site.theme-dark { color: #eaeaea; background: #0d0d0d; }
 .site.theme-light { color: #0e141b; background: #f7f7f8; }
 
-/* Optional full background for dark theme
-.site.theme-dark {
-  background: url("/static/bg.jpg") no-repeat center center fixed;
-  background-size: cover;
-}
-*/
-
 /* ==========================================================================
    Header / Navigation / Footer
    ========================================================================== */
@@ -77,7 +70,6 @@ html, body {
 
 /* ==========================================================================
    Central Age Gate (shared from base.html)
-   Appears if body has data-agegate="on" and no consent cookie/localStorage
    ========================================================================== */
 .age-gate {
   position: fixed; inset: 0; z-index: 9999;
@@ -129,8 +121,7 @@ body.agelock { overflow:hidden; }
 .btn.full { width:100%; }
 
 /* ==========================================================================
-   Generic Chat Layout (minimal baseline)
-   (You can still use static/chat.css for fancy chat styling)
+   Chat Baseline (you can also include static/chat.css for fancier look)
    ========================================================================== */
 .topbar {
   display:flex; align-items:center; justify-content:space-between; gap:12px;
@@ -150,8 +141,7 @@ body.agelock { overflow:hidden; }
 
 .users { list-style:none; margin:0; padding:8px; max-height: calc(100vh - 220px); overflow:auto; }
 .users li { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; cursor:pointer; }
-.theme-dark .users li:hover { background:rgba(37,99,235,.08); }
-.theme-light .users li:hover { background:rgba(37,99,235,.08); }
+.theme-dark .users li:hover, .theme-light .users li:hover { background:rgba(37,99,235,.08); }
 .users .user-name { display:flex; align-items:center; gap:8px; }
 .badge-mod { margin-left:auto; font-size:.7rem; padding:2px 6px; border-radius:999px; background:#e11d48; color:#fff; font-weight:700; }
 
@@ -170,7 +160,7 @@ body.agelock { overflow:hidden; }
 .send button[type="submit"] { background:#2563eb; color:#fff; border:0; border-radius:.6rem; padding:.6rem 1rem; cursor:pointer; }
 .send button[type="submit"]:hover { filter:brightness(1.08); }
 
-/* Avatar minimal baseline */
+/* Avatar baseline */
 .avatar { width:28px; height:28px; border-radius:50%; object-fit:cover; display:inline-block; border:1px solid rgba(255,255,255,.15); }
 .theme-light .avatar { border-color: rgba(0,0,0,.1); }
 .avatar-fallback { width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:.85rem; }
@@ -184,7 +174,7 @@ body.agelock { overflow:hidden; }
 .typing .dot:nth-child(3){ animation-delay: .24s; }
 @keyframes typing-bounce { 0%, 60%, 100% { transform: translateY(0); opacity:.45; } 30% { transform: translateY(-4px); opacity:.95; } }
 
-/* Responsive adjustments for chat layout */
+/* Responsive (chat layout) */
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
   .users { max-height: initial; }
@@ -231,7 +221,7 @@ body.agelock { overflow:hidden; }
 .theme-dark .hero-card { background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)); border-color:#273244; }
 .theme-light .hero-card { background: linear-gradient(180deg, rgba(0,0,0,.03), rgba(0,0,0,.015)); border-color:#e5e7eb; }
 
-/* CTA buttons (shared) */
+/* CTA buttons */
 .hero-cta { display:flex; flex-wrap:wrap; gap:12px; }
 .btn.xl { font-size:1.05rem; padding:.8rem 1.2rem; }
 .btn.ghost {
@@ -271,7 +261,7 @@ body.agelock { overflow:hidden; }
 .cta-strip p { margin:0; opacity:.92; }
 .cta-strip .btn { white-space: nowrap; }
 
-/* Accent underlines for headings */
+/* Accent underlines */
 .hero h1, .feature h3 { position:relative; }
 .hero h1::after, .feature h3::after {
   content:""; position:absolute; left:0; bottom:-6px; width:84px; height:3px; border-radius:3px;
