@@ -1,4 +1,6 @@
-app.py — Flask - Socket.IO chat - login logging (single file)
+# -- Paths ---------------------------------------------
+
+# app.py - Flask - Socket.IO chat - login logging (single file)
 
 - Combines your Socket.IO chat app with the /admin/logins dashboard
 
