@@ -2,21 +2,33 @@
 {% block title %}Login · Hot Singles Chat{% endblock %}
 
 {% block content %}
-<main class="login-card" role="main">
-  <div class="card">
-    <div class="login-branding">
-      <h1>Enter the Chat</h1>
-      <p class="sub">Pick a display name. Avatar and gender are optional.</p>
-    </div>
+<main class="login-card" role="main" style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f4f4f4;">
+  <div class="login-box" style="background:#fff;padding:2rem;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.2);width:350px;">
+    <h1 style="text-align:center;margin-bottom:1rem;">Enter the Chat</h1>
+    <p class="sub" style="text-align:center;opacity:.85;margin-bottom:1rem;">
+      Pick a display name. Avatar and gender are optional.
+    </p>
 
-    <form method="POST" action="{{ url_for('login') }}" class="form-grid" novalidate>
-      {# Display name (required) #}
+    {% if error %}
+      <div class="error" style="color:red;text-align:center;margin-bottom:1rem;">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('login') }}" novalidate>
+      <!-- Username -->
       <label for="username"><strong>Display name *</strong></label>
-      <input id="username" name="username" type="text" placeholder="e.g. Delvin" required>
+      <input id="username" name="username" type="text" placeholder="e.g. Delvin" required style="width:100%;padding:0.5rem;margin-bottom:0.75rem;border:1px solid #ccc;border-radius:5px;">
 
-      {# Gender (optional) #}
+      <!-- Password (optional) -->
+      <label for="password"><strong>Password (optional)</strong></label>
+      <input id="password" name="password" type="password" placeholder="••••••" style="width:100%;padding:0.5rem;margin-bottom:0.75rem;border:1px solid #ccc;border-radius:5px;">
+
+      <!-- Moderator code (optional) -->
+      <label for="mod_code"><strong>Moderator code (optional)</strong></label>
+      <input id="mod_code" name="mod_code" type="password" placeholder="Enter mod code if you have one" style="width:100%;padding:0.5rem;margin-bottom:0.75rem;border:1px solid #ccc;border-radius:5px;">
+
+      <!-- Gender (optional) -->
       <label for="gender"><strong>Gender (optional)</strong></label>
-      <select id="gender" name="gender">
+      <select id="gender" name="gender" style="width:100%;padding:0.5rem;margin-bottom:0.75rem;border:1px solid #ccc;border-radius:5px;">
         <option value="">Prefer not to say</option>
         <option value="male">Male</option>
         <option value="female">Female</option>
@@ -25,22 +37,14 @@
         <option value="other">Other</option>
       </select>
 
-      {# Avatar URL (optional) #}
+      <!-- Avatar URL (optional) -->
       <label for="avatar"><strong>Avatar URL (optional)</strong></label>
-      <input id="avatar" name="avatar" type="url" placeholder="https://example.com/me.jpg">
+      <input id="avatar" name="avatar" type="url" placeholder="https://example.com/me.jpg" style="width:100%;padding:0.5rem;margin-bottom:0.75rem;border:1px solid #ccc;border-radius:5px;">
 
-      {# Moderator code (optional) #}
-      <label for="mod_code"><strong>Moderator code (optional)</strong></label>
-      <input id="mod_code" name="mod_code" type="password" placeholder="Enter mod code if you have one">
-
-      {% if error %}
-        <div class="alert" role="alert">{{ error }}</div>
-      {% endif %}
-
-      <button class="btn primary full" type="submit" aria-label="Enter Chat">Enter Chat</button>
+      <button type="submit" style="width:100%;padding:0.75rem;border:none;border-radius:5px;background:#007BFF;color:#fff;font-size:1rem;cursor:pointer;">Enter Chat</button>
     </form>
 
-    <p class="mt-3" style="opacity:.85;">
+    <p class="mt-3" style="opacity:.85;text-align:center;margin-top:1rem;">
       By continuing you confirm you’re 18+ and agree to our
       <a href="{{ url_for('terms') }}">Terms</a> and
       <a href="{{ url_for('privacy') }}">Privacy</a>.
