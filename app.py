@@ -1,10 +1,10 @@
-app.py — Flask + Socket.IO chat + login logging (single file)
+app.py — Flask - Socket.IO chat - login logging (single file)
 
-+ Combines your Socket.IO chat app with the /admin/logins dashboard
+- Combines your Socket.IO chat app with the /admin/logins dashboard
 
-+ Logs username, IP, user-agent, outcome, and the mod_code (masked)
+- Logs username, IP, user-agent, outcome, and the mod_code (masked)
 
-+ Basic Auth protects /admin/logins (use ADMIN_USER / ADMIN_PASS env vars)
+- Basic Auth protects /admin/logins (use ADMIN_USER / ADMIN_PASS env vars)
 
 import os from datetime import datetime from pathlib import Path from itertools import count
 
