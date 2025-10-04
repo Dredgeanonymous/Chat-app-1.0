@@ -1,4 +1,4 @@
-# -- Paths ---------------------------------------------
+
 
 # app.py - Flask - Socket.IO chat - login logging (single file)
 
@@ -11,8 +11,7 @@
 import os from datetime import datetime from pathlib import Path from itertools import count
 
 from flask import ( Flask, render_template, request, redirect, url_for, session, send_from_directory, jsonify, Response ) from flask_socketio import SocketIO, emit, disconnect from markupsafe import escape
-
-── Paths ─────────────────────────────────────────────────────────────────────
+# -- Paths ---------------------------------------------
 
 BASE_DIR = Path(file).resolve().parent TEMPLATES_DIR = BASE_DIR / "templates" STATIC_DIR = BASE_DIR / "static"
 
