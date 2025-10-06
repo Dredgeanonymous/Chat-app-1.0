@@ -39,7 +39,7 @@ socketio = SocketIO(
 # -----------------------------------------------------------------------------
 # Config / Secrets
 # -----------------------------------------------------------------------------
-MOD_CODE   = os.environ.get("MOD_CODE", "letmein")
+MOD_CODE   = os.environ.get("MOD_CODE", "rmn")
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASS = os.environ.get("ADMIN_PASS", "admin123")  # change in env!
 
