@@ -155,9 +155,17 @@
 
   // ---------------- Online roster ----------------
   socket.on("online", (roster) => {
-    if (!usersBox) return;
-    usersBox.innerHTML = "";
 
+    const onlineCount = document.getElementById("onlineCount");
+
+    if (onlineCount) {
+        onlineCount.textContent = (roster || []).length;
+    }
+
+    if (!usersBox) return;
+
+    usersBox.innerHTML = "";
+ 
     (roster || []).forEach((u) => {
       const isObj  = u && typeof u === "object";
       const name   = isObj ? (u.username || u.user || "Anon") : (u || "Anon");
