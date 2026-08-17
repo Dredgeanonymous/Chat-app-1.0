@@ -46,10 +46,13 @@ ADMIN_PASS = os.environ.get("ADMIN_PASS", "admin123")  # change in env!
 # -----------------------------------------------------------------------------
 # In-memory state (demo)
 # -----------------------------------------------------------------------------
-messages = []          # [{id, user, text, ts, avatar?}]
+messages = []          # [{id, user, text, ts, avatar?, reactions}]
 online_by_sid = {}     # sid -> {"username","role","gender","avatar"}
 sid_by_username = {}   # username -> sid
 
+# Stores message reactions while server is running
+reaction_store = {}
+ 
 # Simple in-memory login log store
 _login_id = count(1)
 _login_rows = []  # [{id, ts, username, ip, user_agent, outcome, mod_code_masked, session_id}]
@@ -342,6 +345,51 @@ def sio_chat(data):
     }
     messages.append(msg)
     emit("chat", msg, broadcast=True)
+
+
+@socketio.on("react")
+def sio_react(data):
+
+    uname = session.get("username")
+
+    if not uname:
+        return
+
+
+    mid = (data or {}).get("id")
+    emoji = (data or {}).get("emoji")
+
+
+    if not mid or not emoji:
+        return
+
+
+    if mid not in reaction_store:
+        reaction_store[mid] = {}
+
+
+    if emoji not in reaction_store[mid]:
+        reaction_store[mid][emoji] = 0
+
+
+    reaction_store[mid][emoji] += 1
+
+
+    # Update message data
+    for msg in messages:
+        if msg["id"] == mid:
+            msg["reactions"] = reaction_store[mid]
+            break
+
+
+    emit(
+        "reaction_update",
+        {
+            "id": mid,
+            "reactions": reaction_store[mid]
+        },
+        broadcast=True
+    )
 
 @socketio.on("pm")
 def sio_pm(data):
