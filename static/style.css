@@ -551,12 +551,22 @@ body.agelock {
 }
 
 
-.users li {
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:8px 10px;
-  border-radius:10px;
+.users li{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background: var(--panel-2);
+    color: var(--text);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:8px 10px;
+}
+
+.users,
+.users li,
+.users span,
+.users strong {
+    color: var(--text);
 }
 
 
