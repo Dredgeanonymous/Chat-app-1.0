@@ -108,10 +108,18 @@
 
   <main class="layout" role="main">
     <!-- LEFT: Online users -->
-    <section class="panel" aria-labelledby="online-heading">
-      <h2 id="online-heading">Online</h2>
-      <ul id="users" class="users" aria-live="polite" aria-label="Online users list"></ul>
-    </section>
+ <section class="panel" aria-labelledby="online-heading">
+
+  <div class="online-header">
+    <h2 id="online-heading">Online</h2>
+    <div class="online-metric">
+      🟢 <span id="onlineCount">0</span> Online
+    </div>
+  </div>
+
+  <ul id="users" class="users" aria-live="polite" aria-label="Online users list"></ul>
+
+</section>
 
     <!-- RIGHT: Chat stream + composer -->
     <section class="panel" aria-labelledby="chat-heading">
