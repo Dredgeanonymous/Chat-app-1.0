@@ -802,3 +802,24 @@ body.agelock {
   }
 
 }
+
+
+.online-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+}
+
+.online-header h2 {
+    margin:0;
+}
+
+.online-metric {
+    background:var(--panel-2);
+    color:var(--text);
+    border:1px solid var(--border);
+    padding:5px 10px;
+    border-radius:999px;
+    font-size:.85rem;
+}
