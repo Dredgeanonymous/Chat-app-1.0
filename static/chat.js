@@ -207,7 +207,7 @@
     const emoji = btn.getAttribute("data-emoji");
     const id    = btn.getAttribute("data-id");
     // If you implement reactions server-side, emit here:
-    // socket.emit("react", { id, emoji });
+      socket.emit("react", { id, emoji });
     // For now we do a playful local bump effect:
     btn.style.transform = "scale(1.15)";
     setTimeout(() => (btn.style.transform = ""), 120);
