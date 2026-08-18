@@ -670,6 +670,10 @@ body.agelock {
    LANDING PAGE
    ========================================================================== */
 
+/* =========================
+   LANDING PAGE
+   ========================= */
+
 .landing {
   min-height: 100vh;
   width: 100%;
@@ -695,6 +699,7 @@ body.agelock {
   z-index: 1;
 }
 
+
 /* =========================
    HERO SECTION
    ========================= */
@@ -713,7 +718,16 @@ body.agelock {
   overflow: hidden;
 }
 
-/* Hero heading */
+.hero-inner {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+
+/* =========================
+   HERO HEADINGS
+   ========================= */
 
 .hero h1 {
   margin: 0 0 20px;
@@ -723,11 +737,24 @@ body.agelock {
 
   font-weight: 700;
 
-  overflow-wrap: break-word;
-  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
-/* Hero paragraphs */
+.hero h2 {
+  margin: 0 0 24px;
+
+  font-size: clamp(18px, 3vw, 28px);
+  line-height: 1.35;
+
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+
+/* =========================
+   HERO PARAGRAPHS
+   ========================= */
 
 .hero p {
   max-width: 700px;
@@ -736,11 +763,9 @@ body.agelock {
   font-size: clamp(15px, 2vw, 19px);
   line-height: 1.6;
 
-  overflow-wrap: break-word;
-  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
-
-/* Prevent the last paragraph from creating unnecessary spacing */
 
 .hero p:last-child {
   margin-bottom: 0;
@@ -748,12 +773,184 @@ body.agelock {
 
 
 /* =========================
+   WELCOME BOX
+   ========================= */
+
+.welcome-box {
+  width: 100%;
+  max-width: 700px;
+  box-sizing: border-box;
+
+  margin: 24px auto;
+
+  padding: 18px 20px;
+
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  overflow: hidden;
+}
+
+.welcome-box p {
+  margin: 0;
+
+  font-size: 16px;
+  line-height: 1.6;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* =========================
+   BUTTON AREA
+   ========================= */
+
+.hero-cta {
+  width: 100%;
+  max-width: 700px;
+
+  margin: 28px auto 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 14px;
+
+  flex-wrap: wrap;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================
+   BUTTONS
+   ========================= */
+
+.landing .btn {
+  box-sizing: border-box;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  min-height: 48px;
+
+  padding: 12px 22px;
+
+  margin: 0;
+
+  border-radius: 10px;
+
+  text-decoration: none;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  line-height: 1.2;
+
+  text-align: center;
+
+  white-space: normal;
+
+  overflow: visible;
+
+  max-width: 100%;
+
+  flex: 0 1 auto;
+
+  vertical-align: middle;
+
+  cursor: pointer;
+}
+
+
+/* Make the text itself behave properly */
+
+.landing .btn span {
+  display: inline-block;
+
+  max-width: 100%;
+
+  line-height: 1.2;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* Button icon */
+
+.landing .btn i {
+  flex: 0 0 auto;
+
+  line-height: 1;
+
+  font-size: 17px;
+}
+
+
+/* Extra-large button */
+
+.landing .btn.xl {
+  min-height: 54px;
+
+  padding: 14px 26px;
+
+  font-size: 18px;
+}
+
+
+/* Prevent buttons from being squeezed */
+
+.landing .hero-cta .btn {
+  min-width: 130px;
+}
+
+
+/* =========================
+   HERO ART
+   ========================= */
+
+.hero-art {
+  width: 100%;
+  max-width: 700px;
+
+  margin: 30px auto 0;
+
+  box-sizing: border-box;
+}
+
+.hero-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+/* =========================
    FEATURES
    ========================= */
+
+.features {
+  width: 100%;
+  max-width: 900px;
+
+  margin: 0 auto;
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+}
 
 .feature {
   width: 100%;
   max-width: 900px;
+
   margin: 0 auto 20px;
 
   box-sizing: border-box;
@@ -772,8 +969,7 @@ body.agelock {
 
   line-height: 1.25;
 
-  overflow-wrap: break-word;
-  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .feature p {
@@ -781,8 +977,52 @@ body.agelock {
 
   line-height: 1.6;
 
-  overflow-wrap: break-word;
-  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+
+/* =========================
+   CTA STRIP
+   ========================= */
+
+.cta-strip {
+  width: 100%;
+  max-width: 900px;
+
+  margin: 28px auto 0;
+
+  padding: 22px 24px;
+
+  box-sizing: border-box;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 18px;
+
+  flex-wrap: wrap;
+
+  border-radius: 16px;
+
+  overflow: hidden;
+}
+
+.cta-strip p {
+  margin: 0;
+
+  max-width: 600px;
+
+  line-height: 1.5;
+
+  overflow-wrap: anywhere;
+}
+
+.cta-strip .btn {
+  flex: 0 1 auto;
+
+  max-width: 100%;
 }
 
 
@@ -805,6 +1045,11 @@ body.agelock {
   border-color: var(--dark-border);
 }
 
+.theme-dark .cta-strip {
+  background: #111827;
+  border: 1px solid var(--dark-border);
+}
+
 
 /* =========================
    LIGHT THEME
@@ -818,6 +1063,11 @@ body.agelock {
 .theme-light .feature {
   background: white;
   border-color: var(--light-border);
+}
+
+.theme-light .cta-strip {
+  background: white;
+  border: 1px solid var(--light-border);
 }
 
 
@@ -843,6 +1093,11 @@ body.agelock {
     margin-bottom: 18px;
   }
 
+  .hero h2 {
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+
   .hero p {
     font-size: 16px;
     line-height: 1.55;
@@ -851,6 +1106,15 @@ body.agelock {
   .feature {
     padding: 20px;
     margin-bottom: 16px;
+  }
+
+  .hero-cta {
+    gap: 12px;
+  }
+
+  .cta-strip {
+    padding: 20px;
+    gap: 14px;
   }
 }
 
@@ -863,33 +1127,110 @@ body.agelock {
 
   .landing {
     min-height: 100vh;
+
     padding: 20px 12px 50px;
   }
 
   .hero {
     width: 100%;
+
     padding: 32px 18px;
+
     margin-bottom: 20px;
+
     border-radius: 16px;
   }
 
   .hero h1 {
     font-size: 30px;
+
     line-height: 1.15;
 
     margin: 0 0 16px;
   }
 
+  .hero h2 {
+    font-size: 20px;
+
+    line-height: 1.3;
+
+    margin: 0 0 20px;
+  }
+
   .hero p {
     font-size: 15px;
+
     line-height: 1.55;
 
     margin-bottom: 16px;
   }
 
+
+  /* Welcome box */
+
+  .welcome-box {
+    margin: 20px auto;
+
+    padding: 16px;
+
+    border-radius: 12px;
+  }
+
+  .welcome-box p {
+    font-size: 15px;
+
+    line-height: 1.55;
+  }
+
+
+  /* Stack buttons vertically */
+
+  .hero-cta {
+    width: 100%;
+
+    margin-top: 22px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: stretch;
+
+    gap: 12px;
+  }
+
+
+  /* Full-width mobile buttons */
+
+  .landing .hero-cta .btn {
+    width: 100%;
+
+    min-width: 0;
+
+    max-width: 100%;
+
+    min-height: 50px;
+
+    padding: 13px 18px;
+
+    box-sizing: border-box;
+  }
+
+
+  .landing .btn.xl {
+    min-height: 52px;
+
+    padding: 14px 18px;
+
+    font-size: 17px;
+  }
+
+
   .feature {
     width: 100%;
+
     padding: 18px 16px;
+
     margin-bottom: 14px;
 
     border-radius: 14px;
@@ -898,13 +1239,57 @@ body.agelock {
   .feature h2,
   .feature h3 {
     font-size: 20px;
+
     line-height: 1.25;
+
     margin-bottom: 10px;
   }
 
   .feature p {
     font-size: 14px;
+
     line-height: 1.55;
+  }
+
+
+  /* Bottom CTA */
+
+  .cta-strip {
+    width: 100%;
+
+    padding: 20px 16px;
+
+    margin-top: 22px;
+
+    flex-direction: column;
+
+    gap: 14px;
+
+    border-radius: 14px;
+  }
+
+  .cta-strip p {
+    width: 100%;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+    margin: 0;
+  }
+
+  .cta-strip .btn {
+    width: 100%;
+
+    min-width: 0;
+
+    max-width: 100%;
+
+    min-height: 50px;
+
+    padding: 13px 16px;
+
+    box-sizing: border-box;
   }
 }
 
@@ -928,16 +1313,44 @@ body.agelock {
     font-size: 26px;
   }
 
+  .hero h2 {
+    font-size: 18px;
+  }
+
   .hero p {
     font-size: 14px;
+  }
+
+  .welcome-box {
+    padding: 14px;
+  }
+
+  .welcome-box p {
+    font-size: 14px;
+  }
+
+  .landing .hero-cta .btn {
+    font-size: 15px;
+
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
   .feature {
     padding: 16px 14px;
   }
+
+  .cta-strip {
+    padding: 18px 14px;
+  }
+
+  .cta-strip .btn {
+    font-size: 14px;
+
+    padding-left: 12px;
+    padding-right: 12px;
+  }
 }
-
-
 
 /* ==========================================================================
    LEGAL PAGES
