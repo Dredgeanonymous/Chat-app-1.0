@@ -671,69 +671,270 @@ body.agelock {
    ========================================================================== */
 
 .landing {
-  min-height:100vh;
-  padding:28px 16px 64px;
-  text-align:center;
-  position:relative;
-  background:url("../static/landing-bg.jpg") no-repeat center;
-  background-size:cover;
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 40px 20px 80px;
+  text-align: center;
+  position: relative;
+  background: url("../static/landing-bg.jpg") no-repeat center center;
+  background-size: cover;
+  overflow-x: hidden;
 }
-
 
 .landing::before {
-  content:"";
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,.45);
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 0;
 }
-
 
 .landing > * {
-  position:relative;
-  z-index:1;
+  position: relative;
+  z-index: 1;
 }
 
+/* =========================
+   HERO SECTION
+   ========================= */
 
 .hero {
-  border-radius:20px;
-  padding:64px 18px;
-  border:1px solid;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 32px;
+  box-sizing: border-box;
+
+  border-radius: 20px;
+  padding: 56px 32px;
+
+  border: 1px solid;
+
+  overflow: hidden;
 }
 
-
-.theme-dark .hero {
-  background:linear-gradient(180deg,#111827,#0f172a);
-  border-color:var(--dark-border);
-}
-
-
-.theme-light .hero {
-  background:white;
-  border-color:var(--light-border);
-}
-
+/* Hero heading */
 
 .hero h1 {
-  font-size:clamp(28px,5vw,54px);
+  margin: 0 0 20px;
+
+  font-size: clamp(30px, 5vw, 54px);
+  line-height: 1.15;
+
+  font-weight: 700;
+
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
+/* Hero paragraphs */
+
+.hero p {
+  max-width: 700px;
+  margin: 0 auto 20px;
+
+  font-size: clamp(15px, 2vw, 19px);
+  line-height: 1.6;
+
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* Prevent the last paragraph from creating unnecessary spacing */
+
+.hero p:last-child {
+  margin-bottom: 0;
+}
+
+
+/* =========================
+   FEATURES
+   ========================= */
 
 .feature {
-  border-radius:16px;
-  border:1px solid;
-  padding:18px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 20px;
+
+  box-sizing: border-box;
+
+  border-radius: 16px;
+  border: 1px solid;
+
+  padding: 24px;
+
+  overflow: hidden;
 }
 
+.feature h2,
+.feature h3 {
+  margin: 0 0 12px;
+
+  line-height: 1.25;
+
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+.feature p {
+  margin: 0;
+
+  line-height: 1.6;
+
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+
+/* =========================
+   DARK THEME
+   ========================= */
+
+.theme-dark .hero {
+  background: linear-gradient(
+    180deg,
+    #111827,
+    #0f172a
+  );
+
+  border-color: var(--dark-border);
+}
 
 .theme-dark .feature {
-  background:#111827;
-  border-color:var(--dark-border);
+  background: #111827;
+  border-color: var(--dark-border);
 }
 
 
+/* =========================
+   LIGHT THEME
+   ========================= */
+
+.theme-light .hero {
+  background: white;
+  border-color: var(--light-border);
+}
+
 .theme-light .feature {
-  background:white;
-  border-color:var(--light-border);
+  background: white;
+  border-color: var(--light-border);
+}
+
+
+/* =========================
+   TABLET
+   ========================= */
+
+@media (max-width: 768px) {
+
+  .landing {
+    padding: 30px 16px 60px;
+  }
+
+  .hero {
+    padding: 44px 24px;
+    margin-bottom: 24px;
+    border-radius: 18px;
+  }
+
+  .hero h1 {
+    font-size: clamp(28px, 8vw, 44px);
+    line-height: 1.15;
+    margin-bottom: 18px;
+  }
+
+  .hero p {
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  .feature {
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+}
+
+
+/* =========================
+   PHONE
+   ========================= */
+
+@media (max-width: 480px) {
+
+  .landing {
+    min-height: 100vh;
+    padding: 20px 12px 50px;
+  }
+
+  .hero {
+    width: 100%;
+    padding: 32px 18px;
+    margin-bottom: 20px;
+    border-radius: 16px;
+  }
+
+  .hero h1 {
+    font-size: 30px;
+    line-height: 1.15;
+
+    margin: 0 0 16px;
+  }
+
+  .hero p {
+    font-size: 15px;
+    line-height: 1.55;
+
+    margin-bottom: 16px;
+  }
+
+  .feature {
+    width: 100%;
+    padding: 18px 16px;
+    margin-bottom: 14px;
+
+    border-radius: 14px;
+  }
+
+  .feature h2,
+  .feature h3 {
+    font-size: 20px;
+    line-height: 1.25;
+    margin-bottom: 10px;
+  }
+
+  .feature p {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+}
+
+
+/* =========================
+   VERY SMALL PHONES
+   ========================= */
+
+@media (max-width: 360px) {
+
+  .landing {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .hero {
+    padding: 28px 14px;
+  }
+
+  .hero h1 {
+    font-size: 26px;
+  }
+
+  .hero p {
+    font-size: 14px;
+  }
+
+  .feature {
+    padding: 16px 14px;
+  }
 }
 
 
