@@ -22,6 +22,16 @@
       </div>
     {% endif %}
 
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-J8B4QMKMZZ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-J8B4QMKMZZ');
+</script>
+
 
     <form method="POST" action="{{ url_for('login') }}" class="form-grid" novalidate>
 
