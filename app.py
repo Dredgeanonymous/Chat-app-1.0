@@ -599,6 +599,38 @@ def handle_webrtc_signal(data):
         },
         to=target_sid
     )
+@socketio.on("call_ended")
+def handle_call_ended(data):
+    """
+    Tell the other user that the video call has ended.
+    """
+    sender = online_by_sid.get(request.sid)
+
+    if not sender:
+        return
+
+    if not isinstance(data, dict):
+        return
+
+    target_username = str(
+        data.get("to", "")
+    ).strip()
+
+    if not target_username:
+        return
+
+    target_sid = sid_by_username.get(target_username)
+
+    if not target_sid:
+        return
+
+    emit(
+        "call_ended",
+        {
+            "from": sender.get("username")
+        },
+        to=target_sid
+    )
 # -----------------------------------------------------------------------------
 # Entrypoint
 # -----------------------------------------------------------------------------
