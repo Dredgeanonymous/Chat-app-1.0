@@ -2283,3 +2283,32 @@ body.agelock {
   background: #f1f5f9;
   border-color: #e2e8f0;
 }
+
+.reaction-btn {
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  border-radius: 8px;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease;
+}
+
+.reaction-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.1);
+}
+
+.reaction-btn.reacted {
+  background: rgba(255,255,255,.18);
+  border-color: rgba(255,255,255,.35);
+  transform: scale(1.05);
+}
+
+.theme-light .reaction-btn {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.theme-light .reaction-btn.reacted {
+  background: #e2e8f0;
+}
