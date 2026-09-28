@@ -233,14 +233,21 @@
         ${
           username !== MY_USERNAME
             ? `
-              <button
-                type="button"
-                class="user-message-btn"
-                data-username="${escapeHTML(username)}"
-                aria-label="Message ${escapeHTML(username)}"
-              >
-                Message
-              </button>
+              <div class="user-actions">
+  <button type="button"
+          class="user-message-btn"
+          data-username="${escapeHTML(username)}"
+          aria-label="Message ${escapeHTML(username)}">
+    💬
+  </button>
+
+  <button type="button"
+          class="user-video-btn"
+          data-username="${escapeHTML(username)}"
+          aria-label="Video call ${escapeHTML(username)}">
+    📹
+  </button>
+</div>
             `
             : `
               <span class="you-badge">You</span>
