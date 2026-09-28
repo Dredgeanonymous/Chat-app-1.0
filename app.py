@@ -456,6 +456,147 @@ def sio_delete_message(data):
             emit("message_deleted", {"id": mid}, broadcast=True)
             break
 
+
+
+# -----------------------------------------------------------------------------
+# WebRTC video calling / signaling
+# -----------------------------------------------------------------------------
+
+@socketio.on("call_user")
+def handle_call_user(data):
+    """
+    Caller asks another online user to start a video call.
+    """
+    caller = online_by_sid.get(request.sid)
+
+    if not caller:
+        return
+
+    if not isinstance(data, dict):
+        return
+
+    target_username = str(data.get("to", "")).strip()
+
+    if not target_username:
+        return
+
+    target_sid = sid_by_username.get(target_username)
+
+    if not target_sid:
+        emit("call_error", {
+            "message": f"{target_username} is no longer online."
+        })
+        return
+
+    emit(
+        "incoming_call",
+        {
+            "from": caller.get("username"),
+            "avatar": caller.get("avatar", "")
+        },
+        to=target_sid
+    )
+
+
+@socketio.on("call_accepted")
+def handle_call_accepted(data):
+    """
+    Recipient accepted the incoming call.
+    """
+    accepter = online_by_sid.get(request.sid)
+
+    if not accepter:
+        return
+
+    if not isinstance(data, dict):
+        return
+
+    caller_username = str(data.get("from", "")).strip()
+
+    if not caller_username:
+        return
+
+    caller_sid = sid_by_username.get(caller_username)
+
+    if not caller_sid:
+        emit("call_error", {
+            "message": "The caller is no longer online."
+        })
+        return
+
+    emit(
+        "call_accepted",
+        {
+            "from": accepter.get("username")
+        },
+        to=caller_sid
+    )
+
+
+@socketio.on("call_rejected")
+def handle_call_rejected(data):
+    """
+    Recipient declined the call.
+    """
+    rejector = online_by_sid.get(request.sid)
+
+    if not rejector:
+        return
+
+    if not isinstance(data, dict):
+        return
+
+    caller_username = str(data.get("from", "")).strip()
+
+    if not caller_username:
+        return
+
+    caller_sid = sid_by_username.get(caller_username)
+
+    if not caller_sid:
+        return
+
+    emit(
+        "call_rejected",
+        {
+            "from": rejector.get("username")
+        },
+        to=caller_sid
+    )
+
+
+@socketio.on("webrtc_signal")
+def handle_webrtc_signal(data):
+    """
+    Relay WebRTC offer/answer/ICE information between two users.
+    """
+    sender = online_by_sid.get(request.sid)
+
+    if not sender:
+        return
+
+    if not isinstance(data, dict):
+        return
+
+    target_username = str(data.get("to", "")).strip()
+    signal = data.get("signal")
+
+    if not target_username or not signal:
+        return
+
+    target_sid = sid_by_username.get(target_username)
+
+    if not target_sid:
+        return
+
+    emit(
+        "webrtc_signal",
+        {
+            "from": sender.get("username"),
+            "signal": signal
+        },
+        to=target_sid
+    )
 # -----------------------------------------------------------------------------
 # Entrypoint
 # -----------------------------------------------------------------------------
