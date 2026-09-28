@@ -375,12 +375,38 @@ def handle_reaction(data):
     if not message:
         return
 
+    # Track reactions made by each connected user.
+    if "reacted_by" not in message:
+        message["reacted_by"] = {}
+
+    if request.sid not in message["reacted_by"]:
+        message["reacted_by"][request.sid] = set()
+
+    user_reactions = message["reacted_by"][request.sid]
+
+    # Initialize counts.
     if "reactions" not in message:
         message["reactions"] = {}
 
-    message["reactions"][reaction] = (
-        message["reactions"].get(reaction, 0) + 1
-    )
+    # Toggle reaction.
+    if reaction in user_reactions:
+        # Remove reaction
+        user_reactions.remove(reaction)
+
+        current_count = message["reactions"].get(reaction, 0)
+
+        if current_count <= 1:
+            message["reactions"].pop(reaction, None)
+        else:
+            message["reactions"][reaction] = current_count - 1
+
+    else:
+        # Add reaction
+        user_reactions.add(reaction)
+
+        message["reactions"][reaction] = (
+            message["reactions"].get(reaction, 0) + 1
+        )
 
     socketio.emit(
         "reaction_update",
