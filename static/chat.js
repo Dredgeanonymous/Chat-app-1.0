@@ -276,7 +276,18 @@
       });
   }
 
+     usersBox.querySelectorAll(".user-video-btn")
+  .forEach(function (button) {
+    button.addEventListener("click", function (event) {
+      event.stopPropagation();
 
+      const username = button.getAttribute("data-username");
+
+      if (!username) return;
+
+      startVideoCall(username);
+    });
+  });
   // --------------------------------------------------
   // Messages
   // --------------------------------------------------
