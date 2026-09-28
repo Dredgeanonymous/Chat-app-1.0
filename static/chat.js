@@ -564,44 +564,42 @@
   // --------------------------------------------------
 
   socket.on("reaction_update", function (data) {
+  if (!data || !data.id) return;
 
-    if (!data || !data.id) return;
+  const message = messagesBox?.querySelector(
+    `[data-message-id="${CSS.escape(String(data.id))}"]`
+  );
 
-    const message =
-      messagesBox?.querySelector(
-        `[data-message-id="${CSS.escape(String(data.id))}"]`
-      );
+  if (!message) return;
 
-    if (!message) return;
+  let reactionBox = message.querySelector(".reaction-counts");
 
-    let reactionBox =
-      message.querySelector(".reaction-counts");
+  if (!reactionBox) {
+    reactionBox = document.createElement("div");
+    reactionBox.className = "reaction-counts";
 
-    if (!reactionBox) {
+    const actions = message.querySelector(".message-actions");
 
-      reactionBox =
-        document.createElement("div");
-
-      reactionBox.className =
-        "reaction-counts";
-
-      message
-        .querySelector(".message-content")
-        ?.appendChild(reactionBox);
-
+    if (actions) {
+      actions.insertAdjacentElement("afterend", reactionBox);
+    } else {
+      message.querySelector(".message-content")?.appendChild(reactionBox);
     }
+  }
 
-    const counts = data.reactions || {};
+  const counts = data.reactions || {};
 
-    reactionBox.innerHTML =
-      Object.entries(counts)
-        .filter(([_, count]) => Number(count) > 0)
-        .map(([reaction, count]) =>
-          `<span>${escapeHTML(reaction)} ${Number(count)}</span>`
-        )
-        .join(" ");
-
-  });
+  reactionBox.innerHTML = Object.entries(counts)
+    .filter(([reaction, count]) => Number(count) > 0)
+    .map(([reaction, count]) => {
+      return `
+        <span class="reaction-count">
+          ${escapeHTML(reaction)} ${Number(count)}
+        </span>
+      `;
+    })
+    .join("");
+});
 
 
   // --------------------------------------------------
