@@ -175,129 +175,133 @@
   // --------------------------------------------------
   // Online users
   // --------------------------------------------------
-  function startVideoCall(username) {
-  if (!username) return;
-
-  console.log("Starting video call with:", username);
-
-  socket.emit("call_user", {
-    to: username
-  });
-}
-
   function renderUsers(roster) {
-    if (!usersBox) return;
+  if (!usersBox) return;
 
-    usersBox.innerHTML = "";
+  usersBox.innerHTML = "";
 
-    const users = Array.isArray(roster) ? roster : [];
+  const users = Array.isArray(roster) ? roster : [];
 
-    if (onlineCount) {
-      onlineCount.textContent = users.length;
-    }
-
-    if (users.length === 0) {
-      usersBox.innerHTML = `
-        <li class="user-empty">
-          👋 You're the first one here!<br>
-          Start the conversation.
-        </li>
-      `;
-
-      return;
-    }
-
-    users.forEach(function (user) {
-      const username = user.username || "Anonymous";
-
-      const li = document.createElement("li");
-
-      li.className = "chat-user";
-
-      if (username === MY_USERNAME) {
-        li.classList.add("current-user");
-      }
-
-      const gender = genderIcon(user.gender);
-      const badge = roleBadge(user.role);
-
-      li.innerHTML = `
-        <div class="chat-user-main">
-          ${avatarHTML(user.avatar, username)}
-
-          <div class="chat-user-info">
-            <div class="chat-user-name">
-              ${escapeHTML(username)}
-              ${badge}
-            </div>
-
-            <div class="chat-user-status">
-              ${username === MY_USERNAME
-                ? "You"
-                : `Online ${gender}`}
-            </div>
-          </div>
-        </div>
-
-        ${
-          username !== MY_USERNAME
-            ? `
-              <div class="user-actions">
-  <button type="button"
-          class="user-message-btn"
-          data-username="${escapeHTML(username)}"
-          aria-label="Message ${escapeHTML(username)}">
-    💬
-  </button>
-
-  <button type="button"
-          class="user-video-btn"
-          data-username="${escapeHTML(username)}"
-          aria-label="Video call ${escapeHTML(username)}">
-    📹
-  </button>
-</div>
-            `
-            : `
-              <span class="you-badge">You</span>
-            `
-        }
-      `;
-
-      usersBox.appendChild(li);
-    });
-
-
-    // Message buttons
-    usersBox
-      .querySelectorAll(".user-message-btn")
-      .forEach(function (button) {
-
-        button.addEventListener("click", function (event) {
-          event.stopPropagation();
-
-          const username =
-            button.getAttribute("data-username");
-
-          startPM(username);
-        });
-
-      });
+  if (onlineCount) {
+    onlineCount.textContent = users.length;
   }
 
-     usersBox.querySelectorAll(".user-video-btn")
-  .forEach(function (button) {
-    button.addEventListener("click", function (event) {
-      event.stopPropagation();
+  if (users.length === 0) {
+    usersBox.innerHTML = `
+      <li class="user-empty">
+        👋 You're the first one here!<br>
+        Start the conversation.
+      </li>
+    `;
+    return;
+  }
 
-      const username = button.getAttribute("data-username");
+  users.forEach(function (user) {
+    const username = user.username || "Anonymous";
 
-      if (!username) return;
+    const li = document.createElement("li");
 
-      startVideoCall(username);
-    });
+    li.className = "chat-user";
+
+    if (username === MY_USERNAME) {
+      li.classList.add("current-user");
+    }
+
+    const gender = genderIcon(user.gender);
+    const badge = roleBadge(user.role);
+
+    li.innerHTML = `
+      <div class="chat-user-main">
+        ${avatarHTML(user.avatar, username)}
+
+        <div class="chat-user-info">
+          <div class="chat-user-name">
+            ${escapeHTML(username)}
+            ${badge}
+          </div>
+
+          <div class="chat-user-status">
+            ${
+              username === MY_USERNAME
+                ? "You"
+                : `Online ${gender}`
+            }
+          </div>
+        </div>
+      </div>
+
+      ${
+        username !== MY_USERNAME
+          ? `
+            <div class="user-actions">
+
+              <button
+                type="button"
+                class="user-message-btn"
+                data-username="${escapeHTML(username)}"
+                aria-label="Message ${escapeHTML(username)}">
+                💬
+              </button>
+
+              <button
+                type="button"
+                class="user-video-btn"
+                data-username="${escapeHTML(username)}"
+                aria-label="Video call ${escapeHTML(username)}">
+                📹
+              </button>
+
+            </div>
+          `
+          : `
+            <span class="you-badge">You</span>
+          `
+      }
+    `;
+
+    usersBox.appendChild(li);
   });
-  // --------------------------------------------------
+
+
+  // Message buttons
+  usersBox
+    .querySelectorAll(".user-message-btn")
+    .forEach(function (button) {
+
+      button.addEventListener("click", function (event) {
+        event.stopPropagation();
+
+        const username =
+          button.getAttribute("data-username");
+
+        if (!username) return;
+
+        startPM(username);
+      });
+
+    });
+
+
+  // Video call buttons
+  usersBox
+    .querySelectorAll(".user-video-btn")
+    .forEach(function (button) {
+
+      button.addEventListener("click", function (event) {
+        event.stopPropagation();
+
+        const username =
+          button.getAttribute("data-username");
+
+        if (!username) return;
+
+        startVideoCall(username);
+      });
+
+    });
+}  
+
+// --------------------------------------------------
   // Messages
   // --------------------------------------------------
 
