@@ -663,7 +663,7 @@ def sio_chat(data):
     msg = {
         "id": next_msg_id(),
         "user": uname,
-        "text": escape(txt),
+        "text": txt,
         "ts": datetime.utcnow().isoformat(
             timespec="seconds"
         ) + "Z",
@@ -835,7 +835,7 @@ def sio_pm(data):
     payload = {
         "from": uname,
         "to": actual_to_user,
-        "text": escape(txt),
+        "text": txt,
         "ts": datetime.utcnow().isoformat(
             timespec="seconds"
         ) + "Z",
