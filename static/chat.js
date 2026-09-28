@@ -52,8 +52,6 @@
   let incomingOffer = null;
   let isCaller = false;
 
-  // ICE candidates can arrive before the remote
-  // description is ready, so we temporarily queue them.
   let pendingIceCandidates = [];
 
   const rtcConfig = {
@@ -169,7 +167,10 @@
   function startPM(username) {
     if (!username) return;
 
-    if (username === MY_USERNAME) {
+    if (
+      username.toLowerCase() ===
+      MY_USERNAME.toLowerCase()
+    ) {
       return;
     }
 
@@ -277,7 +278,10 @@
       li.className =
         "chat-user";
 
-      if (username === MY_USERNAME) {
+      if (
+        username.toLowerCase() ===
+        MY_USERNAME.toLowerCase()
+      ) {
         li.classList.add("current-user");
       }
 
@@ -304,7 +308,8 @@
 
             <div class="chat-user-status">
               ${
-                username === MY_USERNAME
+                username.toLowerCase() ===
+                MY_USERNAME.toLowerCase()
                   ? "You"
                   : `Online ${gender}`
               }
@@ -315,7 +320,8 @@
         </div>
 
         ${
-          username !== MY_USERNAME
+          username.toLowerCase() !==
+          MY_USERNAME.toLowerCase()
             ? `
               <div class="user-actions">
 
@@ -429,7 +435,10 @@
       message.id ||
       "";
 
-    if (username === MY_USERNAME) {
+    if (
+      username.toLowerCase() ===
+      MY_USERNAME.toLowerCase()
+    ) {
       li.classList.add(
         "own-message"
       );
@@ -625,6 +634,36 @@
     upgrade: true
   });
 
+
+  // ==================================================
+  // USERNAME TAKEN
+  // ==================================================
+
+  socket.on(
+    "username_taken",
+    function (data) {
+
+      const message =
+        data?.message ||
+        "That username is already taken. Please choose another name.";
+
+      // Stop normal chat activity
+      privateTarget = null;
+
+      // Show the user what happened
+      alert(message);
+
+      // Send them back to the login page
+      window.location.href =
+        "/login";
+
+    }
+  );
+
+
+  // ==================================================
+  // SOCKET CONNECT
+  // ==================================================
 
   socket.on(
     "connect",
@@ -974,7 +1013,8 @@
 
       if (
         !username ||
-        username === MY_USERNAME
+        username.toLowerCase() ===
+        MY_USERNAME.toLowerCase()
       ) {
         return;
       }
@@ -1461,7 +1501,10 @@
       return;
     }
 
-    if (username === MY_USERNAME) {
+    if (
+      username.toLowerCase() ===
+      MY_USERNAME.toLowerCase()
+    ) {
       return;
     }
 
@@ -1502,9 +1545,6 @@
     addLocalTracks();
 
 
-    // Tell server we want to call.
-    // We wait for call_accepted before
-    // creating the offer.
     socket.emit(
       "call_user",
       {
@@ -1515,8 +1555,6 @@
   }
 
 
-  // Make function available
-  // to buttons if needed elsewhere.
   window.startVideoCall =
     startVideoCall;
 
@@ -1540,7 +1578,6 @@
       }
 
 
-      // Already in another call
       if (currentCallUser) {
 
         socket.emit(
@@ -1633,8 +1670,6 @@
         );
 
 
-        // If the offer already arrived,
-        // answer it immediately.
         if (incomingOffer) {
           await createAnswerFromOffer();
         }
@@ -1797,8 +1832,6 @@
         incomingOffer =
           signal.offer;
 
-        // If the user has already accepted,
-        // we can answer now.
         if (
           peerConnection &&
           !isCaller
