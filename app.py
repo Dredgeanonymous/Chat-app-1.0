@@ -452,24 +452,34 @@ def sio_connect():
     # UNIQUE USERNAME CHECK
     # -------------------------------------------------------------------------
     #
-    # If another person is already using this username,
-    # tell the new person that the name is taken and disconnect them.
+    # If another person is already using this username, tell the new person
+    # that the name is taken.
+    #
+    # IMPORTANT:
+    # We intentionally DO NOT immediately call disconnect() here.
+    #
+    # The browser needs a chance to receive the "username_taken" event.
+    # The existing chat.js then shows the message and redirects to /login.
     #
     existing_sid = sid_by_username.get(username_key)
 
     if existing_sid and existing_sid != request.sid:
 
+        print(
+            f"Duplicate username blocked: "
+            f"{uname} ({request.sid}) "
+            f"already used by {existing_sid}"
+        )
+
         emit(
             "username_taken",
             {
                 "message": (
-                    f'The name "{uname}" is already taken. '
+                    f'The name "{uname}" is already taken.\n\n'
                     "Please choose another name."
                 )
             }
         )
-
-        disconnect()
 
         return
 
@@ -585,6 +595,12 @@ def sio_chat(data):
     if not uname:
         return
 
+    # Make sure the socket is actually registered.
+    # This prevents a duplicate-name connection from sending messages
+    # before it redirects to the login page.
+    if request.sid not in online_by_sid:
+        return
+
     txt = (data or {}).get(
         "text",
         ""
@@ -628,6 +644,10 @@ def sio_chat(data):
 def handle_reaction(data):
 
     if not isinstance(data, dict):
+        return
+
+    # Only registered online users may react.
+    if request.sid not in online_by_sid:
         return
 
     message_id = str(
@@ -726,6 +746,10 @@ def sio_pm(data):
     if not uname:
         return
 
+    # Duplicate-name connections are not registered.
+    if request.sid not in online_by_sid:
+        return
+
     to_user = (data or {}).get(
         "to",
         ""
@@ -802,6 +826,9 @@ def sio_pm(data):
 
 @socketio.on("delete_message")
 def sio_delete_message(data):
+
+    if request.sid not in online_by_sid:
+        return
 
     if session.get("role", "user") != "mod":
         return
@@ -1095,4 +1122,3 @@ if __name__ == "__main__":
             )
         )
     )
-
