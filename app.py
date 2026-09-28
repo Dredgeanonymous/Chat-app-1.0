@@ -81,6 +81,27 @@ def normalize_username(username: str) -> str:
     return (username or "").strip().casefold()
 
 
+def normalize_gender(gender: str) -> str:
+    """
+    Always store gender in a consistent format.
+
+    Accepted values:
+        male
+        female
+
+    Everything else becomes an empty string.
+    """
+    value = (gender or "").strip().casefold()
+
+    if value in ("female", "f", "woman", "girl"):
+        return "female"
+
+    if value in ("male", "m", "man", "boy"):
+        return "male"
+
+    return ""
+
+
 # Jinja helper: {{ now().year }}
 @app.context_processor
 def inject_now():
@@ -236,7 +257,14 @@ def login():
         username = (form.get("username") or "").strip()
         password = (form.get("password") or "").strip()
         mod_code = (form.get("mod_code") or "").strip()
-        gender = (form.get("gender") or "").strip()
+
+        # IMPORTANT:
+        # Normalize gender immediately so every browser receives
+        # exactly "male", "female", or "".
+        gender = normalize_gender(
+            form.get("gender") or ""
+        )
+
         avatar = (form.get("avatar") or "").strip()
 
         role = (
@@ -270,7 +298,10 @@ def login():
         # Store login information in session
         session["username"] = username
         session["role"] = role
+
+        # Store the normalized gender
         session["gender"] = gender
+
         session["avatar"] = avatar
 
         return redirect(url_for("chat"))
@@ -293,6 +324,12 @@ def api_login():
     username = (data.get("username") or "").strip()
     password = (data.get("password") or "").strip()
     mod_code = (data.get("mod_code") or "").strip()
+
+    gender = normalize_gender(
+        data.get("gender") or ""
+    )
+
+    avatar = (data.get("avatar") or "").strip()
 
     ip = client_ip()
     ua = request.headers.get("User-Agent", "")
@@ -320,6 +357,13 @@ def api_login():
         }), 401
 
     session["username"] = username
+    session["role"] = (
+        "mod"
+        if mod_code and mod_code == MOD_CODE
+        else "user"
+    )
+    session["gender"] = gender
+    session["avatar"] = avatar
 
     return jsonify({
         "ok": True
@@ -412,7 +456,13 @@ def build_roster():
         {
             "username": info.get("username"),
             "role": info.get("role", "user"),
-            "gender": info.get("gender", ""),
+
+            # Make absolutely sure the roster always sends
+            # normalized gender values.
+            "gender": normalize_gender(
+                info.get("gender", "")
+            ),
+
             "avatar": info.get("avatar", ""),
         }
         for info in online_by_sid.values()
@@ -451,16 +501,7 @@ def sio_connect():
     # -------------------------------------------------------------------------
     # UNIQUE USERNAME CHECK
     # -------------------------------------------------------------------------
-    #
-    # If another person is already using this username, tell the new person
-    # that the name is taken.
-    #
-    # IMPORTANT:
-    # We intentionally DO NOT immediately call disconnect() here.
-    #
-    # The browser needs a chance to receive the "username_taken" event.
-    # The existing chat.js then shows the message and redirects to /login.
-    #
+
     existing_sid = sid_by_username.get(username_key)
 
     if existing_sid and existing_sid != request.sid:
@@ -484,13 +525,21 @@ def sio_connect():
         return
 
     # -------------------------------------------------------------------------
+    # Normalize gender again before putting it into online state
+    # -------------------------------------------------------------------------
+
+    gender = normalize_gender(
+        session.get("gender", "")
+    )
+
+    # -------------------------------------------------------------------------
     # Register user
     # -------------------------------------------------------------------------
 
     online_by_sid[request.sid] = {
         "username": uname,
         "role": session.get("role", "user"),
-        "gender": session.get("gender", ""),
+        "gender": gender,
         "avatar": session.get("avatar", ""),
     }
 
@@ -595,9 +644,6 @@ def sio_chat(data):
     if not uname:
         return
 
-    # Make sure the socket is actually registered.
-    # This prevents a duplicate-name connection from sending messages
-    # before it redirects to the login page.
     if request.sid not in online_by_sid:
         return
 
@@ -646,7 +692,6 @@ def handle_reaction(data):
     if not isinstance(data, dict):
         return
 
-    # Only registered online users may react.
     if request.sid not in online_by_sid:
         return
 
@@ -695,7 +740,6 @@ def handle_reaction(data):
         request.sid
     ]
 
-    # Toggle reaction
     if reaction in reactions_by_user:
 
         reactions_by_user.remove(
@@ -708,7 +752,6 @@ def handle_reaction(data):
             reaction
         )
 
-    # Recalculate counts
     counts = {}
 
     for user_set in user_reactions.values():
@@ -722,7 +765,6 @@ def handle_reaction(data):
                 ) + 1
             )
 
-    # Store JSON-safe reaction counts
     message["reactions"] = counts
 
     socketio.emit(
@@ -746,7 +788,6 @@ def sio_pm(data):
     if not uname:
         return
 
-    # Duplicate-name connections are not registered.
     if request.sid not in online_by_sid:
         return
 
@@ -772,7 +813,6 @@ def sio_pm(data):
     if not to_user or not txt:
         return
 
-    # Case-insensitive username lookup
     target_sid = sid_by_username.get(
         normalize_username(to_user)
     )
@@ -787,7 +827,6 @@ def sio_pm(data):
     if not target_info:
         return
 
-    # Use the actual username of the recipient
     actual_to_user = target_info.get(
         "username",
         to_user
@@ -806,14 +845,12 @@ def sio_pm(data):
         ),
     }
 
-    # Send to recipient
     emit(
         "pm",
         payload,
         to=target_sid
     )
 
-    # Echo back to sender
     emit(
         "pm",
         payload
