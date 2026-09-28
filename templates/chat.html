@@ -364,6 +364,98 @@
 
 </main>
 
+<!-- Video Call Overlay -->
+<div id="videoCallOverlay" class="video-call-overlay" hidden>
+
+  <div class="video-call-window">
+
+    <div class="video-call-header">
+      <strong id="videoCallTitle">Video Call</strong>
+
+      <button
+        id="closeVideoCall"
+        type="button"
+        aria-label="Close video call">
+        ✕
+      </button>
+    </div>
+
+    <div class="video-container">
+
+      <!-- Remote user's camera -->
+      <video
+        id="remoteVideo"
+        autoplay
+        playsinline>
+      </video>
+
+      <!-- Your camera -->
+      <video
+        id="localVideo"
+        autoplay
+        muted
+        playsinline>
+      </video>
+
+    </div>
+
+    <div id="incomingCall" class="incoming-call" hidden>
+
+      <div class="incoming-call-icon">
+        📹
+      </div>
+
+      <h3 id="incomingCaller">
+        Incoming video call
+      </h3>
+
+      <div class="incoming-call-buttons">
+
+        <button
+          id="acceptCall"
+          type="button"
+          class="call-accept">
+          Accept
+        </button>
+
+        <button
+          id="rejectCall"
+          type="button"
+          class="call-reject">
+          Decline
+        </button>
+
+      </div>
+
+    </div>
+
+    <div class="video-call-controls">
+
+      <button
+        id="muteVideo"
+        type="button">
+        🎤 Mute
+      </button>
+
+      <button
+        id="toggleCamera"
+        type="button">
+        📷 Camera
+      </button>
+
+      <button
+        id="hangupCall"
+        type="button"
+        class="hangup">
+        🔴 Hang Up
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
 
 <!-- Socket.IO -->
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
