@@ -1,183 +1,378 @@
 {% extends "base.html" %}
-{% block title %}Chat · Hot Singles Chat{% endblock %}
 
-{# Expose the role for client-side logic (mods get delete, etc.) #}
+{% block title %}Chat · HotSinglesChat{% endblock %}
+
 {% block body_data %}data-role="{{ role|e }}"{% endblock %}
 
-{% block extra_head %}
+{% block content %}
+
 <style>
- .theme-dark {
-    --bg: #0f172a;
-    --panel: #111827;
-    --panel-2: #0b1222;
-    --text: #e5e7eb;
-    --muted: #9ca3af;
-    --primary: #2563eb;
-    --accent: #22c55e;
-    --danger: #ef4444;
-    --border: #1f2937;
-}
-
-.theme-light {
-    --bg: #ffffff;
-    --panel: #ffffff;
-    --panel-2: #f8fafc;
-    --text: #0f172a;
-    --muted: #475569;
-    --primary: #2563eb;
-    --accent: #22c55e;
-    --danger: #ef4444;
-    --border: #e5e7eb;
-}
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-}
-  .topbar{
-    display:flex; align-items:center; justify-content:space-between;
-    gap:1rem; padding:12px 16px; border-bottom:1px solid var(--border);
-    background: linear-gradient(180deg, #0d1426 0%, #0a1020 100%);
-    position:sticky; top:0; z-index:5;
-  }
-  .topbar .btn{
-    background:var(--primary); color:white; padding:8px 12px; border-radius:8px;
-    text-decoration:none; border:0; display:inline-block;
+  .chat-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px;
   }
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-J8B4QMKMZZ"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-J8B4QMKMZZ');
-</script>
-  .layout{
-    display:grid; grid-template-columns: 260px 1fr; gap:16px; padding:16px;
-  }
-  @media (max-width: 900px){ .layout{ grid-template-columns: 1fr; } }
-
-  .panel{
-    background: var(--panel); border:1px solid var(--border);
-    border-radius:12px; padding:12px; min-height: 70vh;
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: var(--card, #181818);
   }
 
-  /* Online list */
-  .users{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
-  .users li{
-    display:flex; align-items:center; justify-content:space-between;
-    background: var(--panel-2); border:1px solid var(--border); border-radius:10px;
-    padding:8px 10px;
-  }
-  .badge{ font-size:.75rem; padding:2px 8px; border-radius:999px; border:1px solid var(--border); color:var(--muted); }
-  .badge.mod{ color:#ffd166; border-color:#806b00; }
-
-  /* Messages area */
-  .messages{
-    list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;
-    max-height: 62vh; overflow:auto; border:1px solid var(--border); border-radius:10px;
-    background: #0b1222; padding:10px;
-  }
-  .messages li{
-    background:#0e172f; border:1px solid var(--border); border-radius:10px; padding:8px 10px;
-  }
-  .meta{ font-size:.8rem; color:var(--muted); margin-bottom:4px; }
-  .msg{ white-space:pre-wrap; word-break:break-word; }
-
-  /* Composer */
-  .send{
-    display:flex; gap:8px; margin-top:12px; border-top:1px solid var(--border); padding-top:12px;
-  }
-  #msgInput{
-    flex:1; padding:10px; border-radius:10px; border:1px solid var(--border);
-    background:#0b1222; color:var(--text);
-  }
-  #sendForm button, .send button{
-    background: var(--accent); border:0; color:#041a0b; padding:10px 14px;
-    border-radius:10px; font-weight:700; cursor:pointer;
+  .chat-intro {
+    margin-bottom: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--card, #181818);
   }
 
-  /* Hidden heading helper */
-  .sr-only{
-    position:absolute!important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
-    clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  .chat-intro strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .chat-intro p {
+    margin: 0;
+    opacity: .75;
+    font-size: .92rem;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 16px;
+    min-height: 65vh;
+  }
+
+  .panel {
+    background: var(--card, #181818);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .online-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .online-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 16px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+
+  .online-header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  .online-metric {
+    font-size: .85rem;
+    white-space: nowrap;
+  }
+
+  #onlineCount {
+    font-weight: 700;
+  }
+
+  .users {
+    list-style: none;
+    padding: 8px;
+    margin: 0;
+    overflow-y: auto;
+  }
+
+  .user-empty {
+    padding: 20px 12px;
+    text-align: center;
+    opacity: .7;
+    line-height: 1.5;
+  }
+
+  .chat-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .chat-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+
+  .chat-header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  .conversation-prompt {
+    padding: 10px 14px;
+    margin: 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.05);
+    font-size: .9rem;
+  }
+
+  .conversation-prompt strong {
+    margin-right: 5px;
+  }
+
+  .messages {
+    flex: 1;
+    min-height: 350px;
+    max-height: 65vh;
+    overflow-y: auto;
+    list-style: none;
+    padding: 16px;
+    margin: 0;
+  }
+
+  .send-area {
+    border-top: 1px solid rgba(255,255,255,.08);
+    padding: 12px;
+  }
+
+  .send {
+    display: flex;
+    gap: 8px;
+  }
+
+  .send input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .send button {
+    flex-shrink: 0;
+  }
+
+  #backToChat {
+    margin: 10px 12px 0;
+  }
+
+  .chat-footer-note {
+    text-align: center;
+    padding: 8px 12px 12px;
+    font-size: .75rem;
+    opacity: .55;
+  }
+
+  @media (max-width: 900px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+
+    .online-panel {
+      max-height: 220px;
+    }
+
+    .users {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .users > li {
+      min-width: 150px;
+    }
+
+    .messages {
+      max-height: none;
+      min-height: 50vh;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .chat-page {
+      padding: 8px;
+    }
+
+    .topbar {
+      padding: 10px 12px;
+    }
+
+    .send {
+      gap: 6px;
+    }
+
+    .send button {
+      padding-left: 14px;
+      padding-right: 14px;
+    }
   }
 </style>
-{% endblock %}
 
-{% block content %}
+<main class="chat-page" role="main">
+
+  <!-- TOP BAR -->
   <header class="topbar">
+
     <div>
-      Logged in as <strong>{{ username|e }}</strong>
-      <span style="opacity:.7;">({{ role|e }})</span>
+      Logged in as
+      <strong>{{ username|e }}</strong>
+
+      {% if role == "mod" %}
+        <span style="opacity:.7;">(Moderator)</span>
+      {% endif %}
     </div>
-    <a class="btn" href="{{ url_for('logout') }}">Logout</a>
+
+    <a class="btn" href="{{ url_for('logout') }}">
+      Logout
+    </a>
+
   </header>
 
-  <main class="layout" role="main">
-    <!-- LEFT: Online users -->
- <section class="panel" aria-labelledby="online-heading">
 
-  <div class="online-header">
-    <h2 id="online-heading">Online</h2>
-    <div class="online-metric">
-      🟢 <span id="onlineCount">0</span> Online
-    </div>
-  </div>
+  <!-- INTRO -->
+  <section class="chat-intro">
 
-  <ul id="users" class="users" aria-live="polite" aria-label="Online users list"></ul>
+    <strong>👋 Welcome to the room!</strong>
 
-</section>
+    <p>
+      Say hello, join the conversation, and see who you meet.
+    </p>
 
-    <!-- RIGHT: Chat stream + composer -->
-    <section class="panel" aria-labelledby="chat-heading">
-      <h2 id="chat-heading" class="sr-only">
-        Chat
-      </h2>
+  </section>
 
-      <!-- Message list (chat.js appends here) -->
-      <ul id="messages" class="messages" aria-live="polite" aria-label="Messages"></ul>
 
-      <!-- Composer (IDs must match chat.js expectations) -->
-      <form id="sendForm" class="send" autocomplete="off">
-        <input
-          id="msgInput"
-          type="text"
-          placeholder="Type a message"
-          aria-label="Message input"
-          autocomplete="off"
-          autocapitalize="none"
-          spellcheck="false"
-          maxlength="500"
-        >
-        <button type="submit" aria-label="Send message">Send</button>
-      </form>
+  <!-- MAIN CHAT -->
+  <section class="layout">
 
-      <!-- Back from DM button (chat.js toggles visibility) -->
+
+    <!-- ONLINE USERS -->
+    <section class="panel online-panel"
+             aria-labelledby="online-heading">
+
+      <div class="online-header">
+
+        <h2 id="online-heading">
+          🟢 Online
+        </h2>
+
+        <div class="online-metric">
+          <span id="onlineCount">0</span>
+          online
+        </div>
+
+      </div>
+
+      <ul
+        id="users"
+        class="users"
+        aria-live="polite"
+        aria-label="Online users list"
+      >
+        <li class="user-empty">
+          Checking who's online…
+        </li>
+      </ul>
+
+    </section>
+
+
+    <!-- CHAT -->
+    <section class="panel chat-panel"
+             aria-labelledby="chat-heading">
+
+      <div class="chat-header">
+
+        <h2 id="chat-heading">
+          💬 Public Chat
+        </h2>
+
+      </div>
+
+
+      <!-- Conversation starter -->
+      <div class="conversation-prompt">
+
+        <strong>💡 Conversation starter:</strong>
+
+        <span>
+          What's the most interesting thing you've done recently?
+        </span>
+
+      </div>
+
+
+      <!-- Messages -->
+      <ul
+        id="messages"
+        class="messages"
+        aria-live="polite"
+        aria-label="Chat messages"
+      ></ul>
+
+
+      <!-- Back from private message -->
       <button
         id="backToChat"
         type="button"
-        style="display:none; margin:10px;"
+        class="btn"
+        style="display:none;"
         aria-label="Back to public chat"
       >
-        Back to Public Chat
+        ← Back to Public Chat
       </button>
+
+
+      <!-- Send -->
+      <div class="send-area">
+
+        <form
+          id="sendForm"
+          class="send"
+          autocomplete="off"
+        >
+
+          <input
+            id="msgInput"
+            type="text"
+            placeholder="Say something…"
+            maxlength="500"
+            autocomplete="off"
+            aria-label="Message"
+          >
+
+          <button
+            type="submit"
+            class="btn primary"
+            aria-label="Send message"
+          >
+            Send
+          </button>
+
+        </form>
+
+        <div class="chat-footer-note">
+          Be respectful. Have fun. 🔥
+        </div>
+
+      </div>
+
     </section>
-  </main>
-{% endblock %}
 
-{% block extra_scripts %}
-  <!-- Socket.IO client -->
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+  </section>
 
-  <!-- Provide role to chat.js (fallback if body dataset isn't read) -->
-  <script>window.ROLE = document.body.dataset.role || 'user';</script>
+</main>
 
-  <!-- OPTIONAL: Emoji picker (if you plan to wire one in chat.js) -->
-  <!-- <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js" crossorigin="anonymous"></script> -->
 
-  <!-- Chat logic (expects #users, #messages, #sendForm, #msgInput, #backToChat) -->
-  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+<!-- Socket.IO -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+  window.ROLE = {{ role|tojson }};
+  window.USERNAME = {{ username|tojson }};
+</script>
+
+<script src="{{ url_for('static', filename='chat.js') }}"></script>
+
 {% endblock %}
