@@ -1,4 +1,4 @@
-# app.py — Flask + Socket.IO chat + login logging (single file)
+# app.py — Flask + Socket.IO chat + login logging + unique usernames
 
 import os
 from datetime import datetime
@@ -20,14 +20,18 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 
 # -----------------------------------------------------------------------------
-# App / Socket.IO (define before any decorators)
+# App / Socket.IO
 # -----------------------------------------------------------------------------
 app = Flask(
     __name__,
     static_folder=str(STATIC_DIR),
     template_folder=str(TEMPLATES_DIR),
 )
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "dev-secret-change-me"
+)
 
 socketio = SocketIO(
     app,
@@ -39,51 +43,80 @@ socketio = SocketIO(
 # -----------------------------------------------------------------------------
 # Config / Secrets
 # -----------------------------------------------------------------------------
-MOD_CODE   = os.environ.get("MOD_CODE", "rmn")
+MOD_CODE = os.environ.get("MOD_CODE", "rmn")
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
-ADMIN_PASS = os.environ.get("ADMIN_PASS", "admin123")  # change in env!
+ADMIN_PASS = os.environ.get("ADMIN_PASS", "admin123")
 
 # -----------------------------------------------------------------------------
-# In-memory state (demo)
+# In-memory state
 # -----------------------------------------------------------------------------
-messages = []          # [{id, user, text, ts, avatar?, reactions}]
-online_by_sid = {}     # sid -> {"username","role","gender","avatar"}
-sid_by_username = {}   # username -> sid
+messages = []
+
+# sid -> user information
+online_by_sid = {}
+
+# normalized username -> sid
+sid_by_username = {}
 
 # Stores message reactions while server is running
 reaction_store = {}
- 
+
 # Simple in-memory login log store
 _login_id = count(1)
-_login_rows = []  # [{id, ts, username, ip, user_agent, outcome, mod_code_masked, session_id}]
+_login_rows = []
 
-def next_msg_id() -> str:
-    return f"m{len(messages)+1:06d}"
-
-# Jinja helper: {{ now().year }}
-@app.context_processor
-def inject_now():
-    # return a callable, Jinja can call now()
-    return {"now": datetime.utcnow}
 
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
+def next_msg_id() -> str:
+    return f"m{len(messages) + 1:06d}"
+
+
+def normalize_username(username: str) -> str:
+    """
+    Normalize usernames so Sarah, sarah and SARAH
+    are treated as the same username.
+    """
+    return (username or "").strip().casefold()
+
+
+# Jinja helper: {{ now().year }}
+@app.context_processor
+def inject_now():
+    return {"now": datetime.utcnow}
+
+
 def client_ip():
-    """Trust X-Forwarded-For when behind a proxy/Codespaces/NGINX."""
+    """
+    Trust X-Forwarded-For when behind a proxy/Codespaces/NGINX.
+    """
     xff = request.headers.get("X-Forwarded-For")
+
     if xff:
         return xff.split(",")[0].strip()
+
     return request.remote_addr
+
 
 def mask_mod_code(code: str) -> str:
     if not code:
         return ""
+
     if len(code) <= 2:
         return "*" * len(code)
+
     return "*" * (len(code) - 2) + code[-2:]
 
-def log_login(username: str, ip: str, user_agent: str, session_id: str, outcome: str, mod_code: str):
+
+def log_login(
+    username: str,
+    ip: str,
+    user_agent: str,
+    session_id: str,
+    outcome: str,
+    mod_code: str
+):
     row = {
         "id": next(_login_id),
         "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
@@ -94,88 +127,131 @@ def log_login(username: str, ip: str, user_agent: str, session_id: str, outcome:
         "mod_code_masked": mask_mod_code(mod_code or ""),
         "session_id": session_id or "",
     }
+
     _login_rows.append(row)
-    # trim to last 1000 rows to keep memory bounded
+
+    # Keep memory bounded
     if len(_login_rows) > 1000:
         del _login_rows[:-1000]
+
 
 def recent_logs(n: int = 200):
     return list(reversed(_login_rows[-n:]))
 
+
 def check_auth(auth):
-    return auth and auth.username == ADMIN_USER and auth.password == ADMIN_PASS
+    return (
+        auth
+        and auth.username == ADMIN_USER
+        and auth.password == ADMIN_PASS
+    )
+
 
 def require_admin():
     auth = request.authorization
+
     if not check_auth(auth):
         return Response(
-            "Auth required", 401,
-            {"WWW-Authenticate": 'Basic realm="Login logs"'}
+            "Auth required",
+            401,
+            {
+                "WWW-Authenticate":
+                    'Basic realm="Login logs"'
+            }
         )
+
 
 # -----------------------------------------------------------------------------
 # Routes
 # -----------------------------------------------------------------------------
+
 @app.route("/")
 def root():
     return redirect(url_for("landing"))
+
 
 @app.route("/landing")
 def landing():
     return render_template("landing.html")
 
+
 @app.route("/privacy")
 def privacy():
     return render_template("privacy.html")
+
 
 @app.route("/terms")
 def terms():
     return render_template("terms.html")
 
+
 @app.route("/cookies")
 def cookies():
     return render_template("cookies.html")
 
-# ---- PWA files (match base.html calls url_for('manifest') and url_for('sw')) --
+
+# -----------------------------------------------------------------------------
+# PWA files
+# -----------------------------------------------------------------------------
+
 @app.route("/manifest.json")
 @app.route("/manifest")
 def manifest():
-    return send_from_directory("static", "manifest.json", mimetype="application/json")
+    return send_from_directory(
+        "static",
+        "manifest.json",
+        mimetype="application/json"
+    )
+
 
 @app.route("/sw.js")
 def sw():
-    return send_from_directory("static", "sw.js", mimetype="application/javascript")
+    return send_from_directory(
+        "static",
+        "sw.js",
+        mimetype="application/javascript"
+    )
+
 
 @app.route("/.well-known/assetlinks.json")
 def assetlinks():
-    return send_from_directory("static/.well-known", "assetlinks.json", mimetype="application/json")
+    return send_from_directory(
+        "static/.well-known",
+        "assetlinks.json",
+        mimetype="application/json"
+    )
 
-# ---- Auth / Chat (merged with login logging) ---------------------------------
+
+# -----------------------------------------------------------------------------
+# Auth / Login
+# -----------------------------------------------------------------------------
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """
-    Login form used by the chat app, now also logs attempts.
 
-    - If your template includes a password field, we'll read it; otherwise it stays empty.
-    - Outcome is considered 'success' if a username was provided (to match prior behavior).
-    - Role becomes 'mod' if mod_code matches MOD_CODE.
-    """
     if request.method == "POST":
+
         form = request.form or {}
+
         username = (form.get("username") or "").strip()
-        password = (form.get("password") or "").strip()  # optional in UI
-        mod_code  = (form.get("mod_code") or "").strip()
-        gender    = (form.get("gender") or "").strip()
-        avatar    = (form.get("avatar") or "").strip()
+        password = (form.get("password") or "").strip()
+        mod_code = (form.get("mod_code") or "").strip()
+        gender = (form.get("gender") or "").strip()
+        avatar = (form.get("avatar") or "").strip()
 
-        role = "mod" if (mod_code and mod_code == MOD_CODE) else "user"
+        role = (
+            "mod"
+            if mod_code and mod_code == MOD_CODE
+            else "user"
+        )
 
-        # Consider 'success' if username given (keeps existing flow working)
+        # Username is required
         ok = bool(username)
 
-        # Log the attempt regardless of success
+        # Log login attempt
         ip = client_ip()
         ua = request.headers.get("User-Agent", "")
+
         log_login(
             username=username,
             ip=ip,
@@ -186,21 +262,34 @@ def login():
         )
 
         if not ok:
-            return render_template("login.html", error="Username is required.")
+            return render_template(
+                "login.html",
+                error="Username is required."
+            )
 
-        # Persist session for chat
+        # Store login information in session
         session["username"] = username
         session["role"] = role
         session["gender"] = gender
         session["avatar"] = avatar
+
         return redirect(url_for("chat"))
 
-    return render_template("login.html", error=None)
+    return render_template(
+        "login.html",
+        error=None
+    )
+
+
+# -----------------------------------------------------------------------------
+# Optional JSON Login API
+# -----------------------------------------------------------------------------
 
 @app.post("/api/login")
 def api_login():
-    """Optional JSON API for login that also logs (useful for mobile clients)."""
+
     data = request.json or request.form or {}
+
     username = (data.get("username") or "").strip()
     password = (data.get("password") or "").strip()
     mod_code = (data.get("mod_code") or "").strip()
@@ -208,8 +297,12 @@ def api_login():
     ip = client_ip()
     ua = request.headers.get("User-Agent", "")
 
-    # Dummy check retained from your snippet; adjust as needed
-    ok = (username == "demo" and password == "demo") if password else bool(username)
+    # Existing demo behavior
+    ok = (
+        (username == "demo" and password == "demo")
+        if password
+        else bool(username)
+    )
 
     log_login(
         username=username,
@@ -221,72 +314,168 @@ def api_login():
     )
 
     if not ok:
-        return jsonify({"ok": False, "error": "Invalid credentials"}), 401
+        return jsonify({
+            "ok": False,
+            "error": "Invalid credentials"
+        }), 401
 
     session["username"] = username
-    return jsonify({"ok": True})
+
+    return jsonify({
+        "ok": True
+    })
+
+
+# -----------------------------------------------------------------------------
+# Admin Login Logs
+# -----------------------------------------------------------------------------
 
 @app.get("/admin/logins")
 def admin_logs():
+
     guard = require_admin()
+
     if guard:
-        return guard  # prompts for Basic Auth
+        return guard
 
     rows = recent_logs(200)
-    # simple HTML table (intentionally minimal)
+
     html = [
         "<h1>Recent login attempts</h1>",
         "<table border=1 cellpadding=6>",
-        "<tr><th>ID</th><th>Time (UTC)</th><th>User</th><th>IP</th><th>User-Agent</th><th>Outcome</th><th>mod_code (masked)</th></tr>",
-    ]
-    for r in rows:
-        html.append(
-            f"<tr><td>{r['id']}</td>"
-            f"<td>{r['ts']}</td>"
-            f"<td>{r.get('username','')}</td>"
-            f"<td>{r.get('ip','')}</td>"
-            f"<td>{(r.get('user_agent',''))[:120]}</td>"
-            f"<td>{r.get('outcome','')}</td>"
-            f"<td>{r.get('mod_code_masked','')}</td></tr>"
+        (
+            "<tr>"
+            "<th>ID</th>"
+            "<th>Time (UTC)</th>"
+            "<th>User</th>"
+            "<th>IP</th>"
+            "<th>User-Agent</th>"
+            "<th>Outcome</th>"
+            "<th>mod_code (masked)</th>"
+            "</tr>"
         )
+    ]
+
+    for r in rows:
+
+        html.append(
+            f"<tr>"
+            f"<td>{r['id']}</td>"
+            f"<td>{r['ts']}</td>"
+            f"<td>{escape(r.get('username', ''))}</td>"
+            f"<td>{escape(r.get('ip', ''))}</td>"
+            f"<td>{escape((r.get('user_agent', ''))[:120])}</td>"
+            f"<td>{escape(r.get('outcome', ''))}</td>"
+            f"<td>{escape(r.get('mod_code_masked', ''))}</td>"
+            f"</tr>"
+        )
+
     html.append("</table>")
+
     return "\n".join(html)
+
+
+# -----------------------------------------------------------------------------
+# Chat Routes
+# -----------------------------------------------------------------------------
 
 @app.route("/chat")
 def chat():
+
     uname = session.get("username")
+
     if not uname:
         return redirect(url_for("login"))
-    return render_template("chat.html", username=uname, role=session.get("role", "user"))
+
+    return render_template(
+        "chat.html",
+        username=uname,
+        role=session.get("role", "user")
+    )
+
 
 @app.route("/logout")
 def logout():
+
     session.clear()
+
     return redirect(url_for("login"))
 
+
 # -----------------------------------------------------------------------------
-# Socket.IO events
+# Online Roster
 # -----------------------------------------------------------------------------
+
 def build_roster():
-    roster = [{
-        "username": info.get("username"),
-        "role": info.get("role", "user"),
-        "gender": info.get("gender", ""),
-        "avatar": info.get("avatar", ""),
-    } for info in online_by_sid.values()]
-    roster.sort(key=lambda r: (r["username"] or "").lower())
+
+    roster = [
+        {
+            "username": info.get("username"),
+            "role": info.get("role", "user"),
+            "gender": info.get("gender", ""),
+            "avatar": info.get("avatar", ""),
+        }
+        for info in online_by_sid.values()
+    ]
+
+    roster.sort(
+        key=lambda r: (r["username"] or "").lower()
+    )
+
     return roster
 
+
 def broadcast_roster():
-    socketio.emit("online", build_roster())
+    socketio.emit(
+        "online",
+        build_roster()
+    )
+
+
+# -----------------------------------------------------------------------------
+# Socket.IO Connection
+# -----------------------------------------------------------------------------
 
 @socketio.on("connect")
 def sio_connect():
-    # Require a logged-in session for sockets
+
+    # Require a logged-in session
     uname = session.get("username")
+
     if not uname:
         disconnect()
         return
+
+    username_key = normalize_username(uname)
+
+    # -------------------------------------------------------------------------
+    # UNIQUE USERNAME CHECK
+    # -------------------------------------------------------------------------
+    #
+    # If another person is already using this username,
+    # tell the new person that the name is taken and disconnect them.
+    #
+    existing_sid = sid_by_username.get(username_key)
+
+    if existing_sid and existing_sid != request.sid:
+
+        emit(
+            "username_taken",
+            {
+                "message": (
+                    f'The name "{uname}" is already taken. '
+                    "Please choose another name."
+                )
+            }
+        )
+
+        disconnect()
+
+        return
+
+    # -------------------------------------------------------------------------
+    # Register user
+    # -------------------------------------------------------------------------
 
     online_by_sid[request.sid] = {
         "username": uname,
@@ -294,33 +483,85 @@ def sio_connect():
         "gender": session.get("gender", ""),
         "avatar": session.get("avatar", ""),
     }
-    sid_by_username[uname] = request.sid
 
-    # send recent chat history to the new client (trim to last 100)
-    emit("chat_history", messages[-100:])
+    sid_by_username[username_key] = request.sid
+
+    # Send recent chat history
+    emit(
+        "chat_history",
+        messages[-100:]
+    )
+
+    # Update everyone else's online list
     broadcast_roster()
+
+
+# -----------------------------------------------------------------------------
+# Disconnect
+# -----------------------------------------------------------------------------
 
 @socketio.on("disconnect")
 def sio_disconnect():
-    info = online_by_sid.pop(request.sid, None)
+
+    info = online_by_sid.pop(
+        request.sid,
+        None
+    )
+
     if info:
-        sid_by_username.pop(info.get("username"), None)
+
+        username_key = normalize_username(
+            info.get("username", "")
+        )
+
+        # Only remove the username if THIS connection owns it.
+        if sid_by_username.get(username_key) == request.sid:
+
+            sid_by_username.pop(
+                username_key,
+                None
+            )
+
     broadcast_roster()
+
+
+# -----------------------------------------------------------------------------
+# Roster Request
+# -----------------------------------------------------------------------------
 
 @socketio.on("roster_request")
 def sio_roster_request():
-    # Client calls this right after (re)connect to fill the Online list
-    emit("online", build_roster())
+
+    emit(
+        "online",
+        build_roster()
+    )
+
+
+# -----------------------------------------------------------------------------
+# Typing Indicator
+# -----------------------------------------------------------------------------
 
 @socketio.on("typing")
 def handle_typing(data):
-    info = online_by_sid.get(request.sid)
+
+    info = online_by_sid.get(
+        request.sid
+    )
 
     if not info:
         return
 
-    username = info.get("username", "")
-    is_typing = bool(data.get("typing")) if isinstance(data, dict) else False
+    username = info.get(
+        "username",
+        ""
+    )
+
+    is_typing = (
+        bool(data.get("typing"))
+        if isinstance(data, dict)
+        else False
+    )
 
     socketio.emit(
         "typing",
@@ -331,15 +572,29 @@ def handle_typing(data):
         skip_sid=request.sid
     )
 
+
+# -----------------------------------------------------------------------------
+# Public Chat
+# -----------------------------------------------------------------------------
+
 @socketio.on("chat")
 def sio_chat(data):
+
     uname = session.get("username")
+
     if not uname:
         return
-    txt = (data or {}).get("text", "")
+
+    txt = (data or {}).get(
+        "text",
+        ""
+    )
+
     if not isinstance(txt, str):
         return
+
     txt = txt.strip()
+
     if not txt:
         return
 
@@ -347,54 +602,91 @@ def sio_chat(data):
         "id": next_msg_id(),
         "user": uname,
         "text": escape(txt),
-        "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-        "avatar": session.get("avatar", ""),
+        "ts": datetime.utcnow().isoformat(
+            timespec="seconds"
+        ) + "Z",
+        "avatar": session.get(
+            "avatar",
+            ""
+        ),
     }
-    messages.append(msg)
-    emit("chat", msg, broadcast=True)
 
+    messages.append(msg)
+
+    emit(
+        "chat",
+        msg,
+        broadcast=True
+    )
+
+
+# -----------------------------------------------------------------------------
+# Message Reactions
+# -----------------------------------------------------------------------------
 
 @socketio.on("react")
 def handle_reaction(data):
+
     if not isinstance(data, dict):
         return
 
-    message_id = str(data.get("id", "")).strip()
-    reaction = str(data.get("reaction", "")).strip()
+    message_id = str(
+        data.get("id", "")
+    ).strip()
 
-    allowed_reactions = {"👍", "❤️", "😂"}
+    reaction = str(
+        data.get("reaction", "")
+    ).strip()
 
-    if not message_id or reaction not in allowed_reactions:
+    allowed_reactions = {
+        "👍",
+        "❤️",
+        "😂"
+    }
+
+    if (
+        not message_id
+        or reaction not in allowed_reactions
+    ):
         return
 
     message = next(
-        (m for m in messages if str(m.get("id")) == message_id),
+        (
+            m for m in messages
+            if str(m.get("id")) == message_id
+        ),
         None
     )
 
     if not message:
         return
 
-    # Keep reaction tracking OUTSIDE the message object.
-    # This prevents Python sets from being sent through Socket.IO.
     if message_id not in reaction_store:
         reaction_store[message_id] = {}
 
-    user_reactions = reaction_store[message_id]
+    user_reactions = reaction_store[
+        message_id
+    ]
 
     if request.sid not in user_reactions:
         user_reactions[request.sid] = set()
 
-    reactions_by_user = user_reactions[request.sid]
+    reactions_by_user = user_reactions[
+        request.sid
+    ]
 
     # Toggle reaction
     if reaction in reactions_by_user:
 
-        reactions_by_user.remove(reaction)
+        reactions_by_user.remove(
+            reaction
+        )
 
     else:
 
-        reactions_by_user.add(reaction)
+        reactions_by_user.add(
+            reaction
+        )
 
     # Recalculate counts
     counts = {}
@@ -404,10 +696,13 @@ def handle_reaction(data):
         for user_reaction in user_set:
 
             counts[user_reaction] = (
-                counts.get(user_reaction, 0) + 1
+                counts.get(
+                    user_reaction,
+                    0
+                ) + 1
             )
 
-    # Store only JSON-safe reaction counts
+    # Store JSON-safe reaction counts
     message["reactions"] = counts
 
     socketio.emit(
@@ -417,59 +712,130 @@ def handle_reaction(data):
             "reactions": counts
         }
     )
-@socketio.on("pm")
-def sio_pm(data):
-    uname = session.get("username")
-    if not uname:
-        return
-    to_user = (data or {}).get("to", "")
-    txt = (data or {}).get("text", "")
-    if not isinstance(to_user, str) or not isinstance(txt, str):
-        return
-    to_user = to_user.strip()
-    txt = txt.strip()
-    if not to_user or not txt:
-        return
-
-    target_sid = sid_by_username.get(to_user)
-    if not target_sid:
-        return
-
-    payload = {
-        "from": uname,
-        "to": to_user,
-        "text": escape(txt),
-        "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-        "avatar": session.get("avatar", ""),
-    }
-    emit("pm", payload, to=target_sid)  # to recipient
-    emit("pm", payload)                 # echo back to sender
-
-@socketio.on("delete_message")
-def sio_delete_message(data):
-    if session.get("role", "user") != "mod":
-        return
-    mid = (data or {}).get("id")
-    if not mid:
-        return
-    for i, m in enumerate(messages):
-        if m["id"] == mid:
-            messages.pop(i)
-            emit("message_deleted", {"id": mid}, broadcast=True)
-            break
-
 
 
 # -----------------------------------------------------------------------------
-# WebRTC video calling / signaling
+# Private Messages
+# -----------------------------------------------------------------------------
+
+@socketio.on("pm")
+def sio_pm(data):
+
+    uname = session.get("username")
+
+    if not uname:
+        return
+
+    to_user = (data or {}).get(
+        "to",
+        ""
+    )
+
+    txt = (data or {}).get(
+        "text",
+        ""
+    )
+
+    if (
+        not isinstance(to_user, str)
+        or not isinstance(txt, str)
+    ):
+        return
+
+    to_user = to_user.strip()
+    txt = txt.strip()
+
+    if not to_user or not txt:
+        return
+
+    # Case-insensitive username lookup
+    target_sid = sid_by_username.get(
+        normalize_username(to_user)
+    )
+
+    if not target_sid:
+        return
+
+    target_info = online_by_sid.get(
+        target_sid
+    )
+
+    if not target_info:
+        return
+
+    # Use the actual username of the recipient
+    actual_to_user = target_info.get(
+        "username",
+        to_user
+    )
+
+    payload = {
+        "from": uname,
+        "to": actual_to_user,
+        "text": escape(txt),
+        "ts": datetime.utcnow().isoformat(
+            timespec="seconds"
+        ) + "Z",
+        "avatar": session.get(
+            "avatar",
+            ""
+        ),
+    }
+
+    # Send to recipient
+    emit(
+        "pm",
+        payload,
+        to=target_sid
+    )
+
+    # Echo back to sender
+    emit(
+        "pm",
+        payload
+    )
+
+
+# -----------------------------------------------------------------------------
+# Delete Message
+# -----------------------------------------------------------------------------
+
+@socketio.on("delete_message")
+def sio_delete_message(data):
+
+    if session.get("role", "user") != "mod":
+        return
+
+    mid = (data or {}).get("id")
+
+    if not mid:
+        return
+
+    for i, m in enumerate(messages):
+
+        if m["id"] == mid:
+
+            messages.pop(i)
+
+            emit(
+                "message_deleted",
+                {"id": mid},
+                broadcast=True
+            )
+
+            break
+
+
+# -----------------------------------------------------------------------------
+# WebRTC Video Calling / Signaling
 # -----------------------------------------------------------------------------
 
 @socketio.on("call_user")
 def handle_call_user(data):
-    """
-    Caller asks another online user to start a video call.
-    """
-    caller = online_by_sid.get(request.sid)
+
+    caller = online_by_sid.get(
+        request.sid
+    )
 
     if not caller:
         return
@@ -477,35 +843,56 @@ def handle_call_user(data):
     if not isinstance(data, dict):
         return
 
-    target_username = str(data.get("to", "")).strip()
+    target_username = str(
+        data.get("to", "")
+    ).strip()
 
     if not target_username:
         return
 
-    target_sid = sid_by_username.get(target_username)
+    target_sid = sid_by_username.get(
+        normalize_username(target_username)
+    )
 
     if not target_sid:
-        emit("call_error", {
-            "message": f"{target_username} is no longer online."
-        })
+
+        emit(
+            "call_error",
+            {
+                "message": (
+                    f"{target_username} "
+                    "is no longer online."
+                )
+            }
+        )
+
         return
 
     emit(
         "incoming_call",
         {
-            "from": caller.get("username"),
-            "avatar": caller.get("avatar", "")
+            "from": caller.get(
+                "username"
+            ),
+            "avatar": caller.get(
+                "avatar",
+                ""
+            )
         },
         to=target_sid
     )
 
 
+# -----------------------------------------------------------------------------
+# Call Accepted
+# -----------------------------------------------------------------------------
+
 @socketio.on("call_accepted")
 def handle_call_accepted(data):
-    """
-    Recipient accepted the incoming call.
-    """
-    accepter = online_by_sid.get(request.sid)
+
+    accepter = online_by_sid.get(
+        request.sid
+    )
 
     if not accepter:
         return
@@ -513,34 +900,52 @@ def handle_call_accepted(data):
     if not isinstance(data, dict):
         return
 
-    caller_username = str(data.get("from", "")).strip()
+    caller_username = str(
+        data.get("from", "")
+    ).strip()
 
     if not caller_username:
         return
 
-    caller_sid = sid_by_username.get(caller_username)
+    caller_sid = sid_by_username.get(
+        normalize_username(
+            caller_username
+        )
+    )
 
     if not caller_sid:
-        emit("call_error", {
-            "message": "The caller is no longer online."
-        })
+
+        emit(
+            "call_error",
+            {
+                "message":
+                    "The caller is no longer online."
+            }
+        )
+
         return
 
     emit(
         "call_accepted",
         {
-            "from": accepter.get("username")
+            "from": accepter.get(
+                "username"
+            )
         },
         to=caller_sid
     )
 
 
+# -----------------------------------------------------------------------------
+# Call Rejected
+# -----------------------------------------------------------------------------
+
 @socketio.on("call_rejected")
 def handle_call_rejected(data):
-    """
-    Recipient declined the call.
-    """
-    rejector = online_by_sid.get(request.sid)
+
+    rejector = online_by_sid.get(
+        request.sid
+    )
 
     if not rejector:
         return
@@ -548,12 +953,18 @@ def handle_call_rejected(data):
     if not isinstance(data, dict):
         return
 
-    caller_username = str(data.get("from", "")).strip()
+    caller_username = str(
+        data.get("from", "")
+    ).strip()
 
     if not caller_username:
         return
 
-    caller_sid = sid_by_username.get(caller_username)
+    caller_sid = sid_by_username.get(
+        normalize_username(
+            caller_username
+        )
+    )
 
     if not caller_sid:
         return
@@ -561,18 +972,24 @@ def handle_call_rejected(data):
     emit(
         "call_rejected",
         {
-            "from": rejector.get("username")
+            "from": rejector.get(
+                "username"
+            )
         },
         to=caller_sid
     )
 
 
+# -----------------------------------------------------------------------------
+# WebRTC Signal
+# -----------------------------------------------------------------------------
+
 @socketio.on("webrtc_signal")
 def handle_webrtc_signal(data):
-    """
-    Relay WebRTC offer/answer/ICE information between two users.
-    """
-    sender = online_by_sid.get(request.sid)
+
+    sender = online_by_sid.get(
+        request.sid
+    )
 
     if not sender:
         return
@@ -580,13 +997,22 @@ def handle_webrtc_signal(data):
     if not isinstance(data, dict):
         return
 
-    target_username = str(data.get("to", "")).strip()
-    signal = data.get("signal")
+    target_username = str(
+        data.get("to", "")
+    ).strip()
+
+    signal = data.get(
+        "signal"
+    )
 
     if not target_username or not signal:
         return
 
-    target_sid = sid_by_username.get(target_username)
+    target_sid = sid_by_username.get(
+        normalize_username(
+            target_username
+        )
+    )
 
     if not target_sid:
         return
@@ -594,17 +1020,25 @@ def handle_webrtc_signal(data):
     emit(
         "webrtc_signal",
         {
-            "from": sender.get("username"),
+            "from": sender.get(
+                "username"
+            ),
             "signal": signal
         },
         to=target_sid
     )
+
+
+# -----------------------------------------------------------------------------
+# Call Ended
+# -----------------------------------------------------------------------------
+
 @socketio.on("call_ended")
 def handle_call_ended(data):
-    """
-    Tell the other user that the video call has ended.
-    """
-    sender = online_by_sid.get(request.sid)
+
+    sender = online_by_sid.get(
+        request.sid
+    )
 
     if not sender:
         return
@@ -619,7 +1053,11 @@ def handle_call_ended(data):
     if not target_username:
         return
 
-    target_sid = sid_by_username.get(target_username)
+    target_sid = sid_by_username.get(
+        normalize_username(
+            target_username
+        )
+    )
 
     if not target_sid:
         return
@@ -627,14 +1065,34 @@ def handle_call_ended(data):
     emit(
         "call_ended",
         {
-            "from": sender.get("username")
+            "from": sender.get(
+                "username"
+            )
         },
         to=target_sid
     )
+
+
 # -----------------------------------------------------------------------------
 # Entrypoint
 # -----------------------------------------------------------------------------
+
 if __name__ == "__main__":
-    # Dev:  python app.py
-    # Prod: gunicorn -k gevent -w 1 app:app
-    socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+    # Dev:
+    # python app.py
+
+    # Production:
+    # gunicorn -k gevent -w 1 app:app
+
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=int(
+            os.environ.get(
+                "PORT",
+                5000
+            )
+        )
+    )
+
