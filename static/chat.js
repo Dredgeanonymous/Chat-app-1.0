@@ -15,11 +15,47 @@
   const backToChat = document.getElementById("backToChat");
   const onlineCount = document.getElementById("onlineCount");
 
+  // Video call elements
+  const videoCallOverlay = document.getElementById("videoCallOverlay");
+  const localVideo = document.getElementById("localVideo");
+  const remoteVideo = document.getElementById("remoteVideo");
+  const incomingCall = document.getElementById("incomingCall");
+  const incomingCaller = document.getElementById("incomingCaller");
+  const acceptCall = document.getElementById("acceptCall");
+  const rejectCall = document.getElementById("rejectCall");
+  const hangupCall = document.getElementById("hangupCall");
+  const muteVideo = document.getElementById("muteVideo");
+  const toggleCamera = document.getElementById("toggleCamera");
+  const closeVideoCall = document.getElementById("closeVideoCall");
+  const videoCallTitle = document.getElementById("videoCallTitle");
+
   const ROLE = document.body.dataset.role || window.ROLE || "user";
   const MY_USERNAME = window.USERNAME || "";
 
   let privateTarget = null;
   let socket = null;
+
+  // --------------------------------------------------
+  // Video call state
+  // --------------------------------------------------
+
+  let peerConnection = null;
+  let localStream = null;
+
+  let currentCallUser = null;
+  let incomingOffer = null;
+  let isCaller = false;
+
+  const rtcConfig = {
+    iceServers: [
+      {
+        urls: "stun:stun.l.google.com:19302"
+      },
+      {
+        urls: "stun:stun1.l.google.com:19302"
+      }
+    ]
+  };
 
 
   // --------------------------------------------------
@@ -175,137 +211,151 @@
   // --------------------------------------------------
   // Online users
   // --------------------------------------------------
+
   function renderUsers(roster) {
-  if (!usersBox) return;
+    if (!usersBox) return;
 
-  usersBox.innerHTML = "";
+    usersBox.innerHTML = "";
 
-  const users = Array.isArray(roster) ? roster : [];
+    const users = Array.isArray(roster) ? roster : [];
 
-  if (onlineCount) {
-    onlineCount.textContent = users.length;
-  }
-
-  if (users.length === 0) {
-    usersBox.innerHTML = `
-      <li class="user-empty">
-        👋 You're the first one here!<br>
-        Start the conversation.
-      </li>
-    `;
-    return;
-  }
-
-  users.forEach(function (user) {
-    const username = user.username || "Anonymous";
-
-    const li = document.createElement("li");
-
-    li.className = "chat-user";
-
-    if (username === MY_USERNAME) {
-      li.classList.add("current-user");
+    if (onlineCount) {
+      onlineCount.textContent = users.length;
     }
 
-    const gender = genderIcon(user.gender);
-    const badge = roleBadge(user.role);
+    if (users.length === 0) {
+      usersBox.innerHTML = `
+        <li class="user-empty">
+          👋 You're the first one here!<br>
+          Start the conversation.
+        </li>
+      `;
+      return;
+    }
 
-    li.innerHTML = `
-      <div class="chat-user-main">
-        ${avatarHTML(user.avatar, username)}
+    users.forEach(function (user) {
+      const username = user.username || "Anonymous";
 
-        <div class="chat-user-info">
-          <div class="chat-user-name">
-            ${escapeHTML(username)}
-            ${badge}
-          </div>
+      const li = document.createElement("li");
 
-          <div class="chat-user-status">
-            ${
-              username === MY_USERNAME
-                ? "You"
-                : `Online ${gender}`
-            }
-          </div>
-        </div>
-      </div>
+      li.className = "chat-user";
 
-      ${
-        username !== MY_USERNAME
-          ? `
-            <div class="user-actions">
-
-              <button
-                type="button"
-                class="user-message-btn"
-                data-username="${escapeHTML(username)}"
-                aria-label="Message ${escapeHTML(username)}">
-                💬
-              </button>
-
-              <button
-                type="button"
-                class="user-video-btn"
-                data-username="${escapeHTML(username)}"
-                aria-label="Video call ${escapeHTML(username)}">
-                📹
-              </button>
-
-            </div>
-          `
-          : `
-            <span class="you-badge">You</span>
-          `
+      if (username === MY_USERNAME) {
+        li.classList.add("current-user");
       }
-    `;
 
-    usersBox.appendChild(li);
-  });
+      const gender = genderIcon(user.gender);
+      const badge = roleBadge(user.role);
 
+      li.innerHTML = `
+        <div class="chat-user-main">
 
-  // Message buttons
-  usersBox
-    .querySelectorAll(".user-message-btn")
-    .forEach(function (button) {
+          ${avatarHTML(user.avatar, username)}
 
-      button.addEventListener("click", function (event) {
-        event.stopPropagation();
+          <div class="chat-user-info">
 
-        const username =
-          button.getAttribute("data-username");
+            <div class="chat-user-name">
+              ${escapeHTML(username)}
+              ${badge}
+            </div>
 
-        if (!username) return;
+            <div class="chat-user-status">
+              ${
+                username === MY_USERNAME
+                  ? "You"
+                  : `Online ${gender}`
+              }
+            </div>
 
-        startPM(username);
-      });
+          </div>
 
+        </div>
+
+        ${
+          username !== MY_USERNAME
+            ? `
+              <div class="user-actions">
+
+                <button
+                  type="button"
+                  class="user-message-btn"
+                  data-username="${escapeHTML(username)}"
+                  aria-label="Message ${escapeHTML(username)}">
+                  💬
+                </button>
+
+                <button
+                  type="button"
+                  class="user-video-btn"
+                  data-username="${escapeHTML(username)}"
+                  aria-label="Video call ${escapeHTML(username)}">
+                  📹
+                </button>
+
+              </div>
+            `
+            : `
+              <span class="you-badge">
+                You
+              </span>
+            `
+        }
+      `;
+
+      usersBox.appendChild(li);
     });
 
 
-  // Video call buttons
-  usersBox
-    .querySelectorAll(".user-video-btn")
-    .forEach(function (button) {
+    // Message buttons
+    usersBox
+      .querySelectorAll(".user-message-btn")
+      .forEach(function (button) {
 
-      button.addEventListener("click", function (event) {
-        event.stopPropagation();
+        button.addEventListener("click", function (event) {
 
-        const username =
-          button.getAttribute("data-username");
+          event.stopPropagation();
 
-        if (!username) return;
+          const username =
+            button.getAttribute("data-username");
 
-        startVideoCall(username);
+          if (!username) return;
+
+          startPM(username);
+
+        });
+
       });
 
-    });
-}  
 
-// --------------------------------------------------
+    // Video call buttons
+    usersBox
+      .querySelectorAll(".user-video-btn")
+      .forEach(function (button) {
+
+        button.addEventListener("click", function (event) {
+
+          event.stopPropagation();
+
+          const username =
+            button.getAttribute("data-username");
+
+          if (!username) return;
+
+          startVideoCall(username);
+
+        });
+
+      });
+
+  }
+
+
+  // --------------------------------------------------
   // Messages
   // --------------------------------------------------
 
   function renderMessage(message) {
+
     if (!messagesBox || !message) return;
 
     const li = document.createElement("li");
@@ -354,8 +404,7 @@
             type="button"
             class="reaction-btn"
             data-reaction="👍"
-            aria-label="React with thumbs up"
-          >
+            aria-label="React with thumbs up">
             👍
           </button>
 
@@ -363,8 +412,7 @@
             type="button"
             class="reaction-btn"
             data-reaction="❤️"
-            aria-label="React with heart"
-          >
+            aria-label="React with heart">
             ❤️
           </button>
 
@@ -372,8 +420,7 @@
             type="button"
             class="reaction-btn"
             data-reaction="😂"
-            aria-label="React with laughing"
-          >
+            aria-label="React with laughing">
             😂
           </button>
 
@@ -383,8 +430,7 @@
                 <button
                   type="button"
                   class="delete-message-btn"
-                  aria-label="Delete message"
-                >
+                  aria-label="Delete message">
                   Delete
                 </button>
               `
@@ -406,21 +452,28 @@
 
   function attachMessageActions(li, message) {
 
+    // Reaction buttons
     li.querySelectorAll(".reaction-btn")
       .forEach(function (button) {
 
         button.addEventListener("click", function () {
-  const reaction = button.dataset.reaction;
 
-  if (!message.id) return;
+          const reaction =
+            button.dataset.reaction;
 
-  socket.emit("react", {
-    id: message.id,
-    reaction: reaction
-  });
-});
+          if (!message.id) return;
+
+          socket.emit("react", {
+            id: message.id,
+            reaction: reaction
+          });
+
+        });
+
+      });
 
 
+    // Delete button
     const deleteButton =
       li.querySelector(".delete-message-btn");
 
@@ -437,19 +490,23 @@
       });
 
     }
+
   }
 
 
   function renderHistory(history) {
+
     if (!messagesBox) return;
 
     messagesBox.innerHTML = "";
 
     if (!Array.isArray(history) || history.length === 0) {
+
       messagesBox.innerHTML = `
         <li class="chat-empty">
           <div>
             <strong>👋 Start the conversation!</strong>
+
             <p>
               Be the first person to say hello.
             </p>
@@ -494,7 +551,10 @@
 
   socket.on("connect_error", function (error) {
 
-    console.warn("Chat connection error:", error);
+    console.warn(
+      "Chat connection error:",
+      error
+    );
 
   });
 
@@ -542,10 +602,13 @@
 
     const li = document.createElement("li");
 
-    li.className = "chat-message private-message";
+    li.className =
+      "chat-message private-message";
 
     const username =
-      message.user || message.from || "Unknown";
+      message.user ||
+      message.from ||
+      "Unknown";
 
     const text =
       message.text || "";
@@ -558,6 +621,7 @@
       <div class="message-content">
 
         <div class="message-meta">
+
           <strong>
             ${escapeHTML(username)}
           </strong>
@@ -569,6 +633,7 @@
           <span class="message-time">
             ${escapeHTML(formatTime(message.ts))}
           </span>
+
         </div>
 
         <div class="message-text">
@@ -590,42 +655,72 @@
   // --------------------------------------------------
 
   socket.on("reaction_update", function (data) {
-  if (!data || !data.id) return;
 
-  const message = messagesBox?.querySelector(
-    `[data-message-id="${CSS.escape(String(data.id))}"]`
-  );
+    if (!data || !data.id) return;
 
-  if (!message) return;
+    const message =
+      messagesBox?.querySelector(
+        `[data-message-id="${CSS.escape(String(data.id))}"]`
+      );
 
-  let reactionBox = message.querySelector(".reaction-counts");
+    if (!message) return;
 
-  if (!reactionBox) {
-    reactionBox = document.createElement("div");
-    reactionBox.className = "reaction-counts";
+    let reactionBox =
+      message.querySelector(".reaction-counts");
 
-    const actions = message.querySelector(".message-actions");
+    if (!reactionBox) {
 
-    if (actions) {
-      actions.insertAdjacentElement("afterend", reactionBox);
-    } else {
-      message.querySelector(".message-content")?.appendChild(reactionBox);
+      reactionBox =
+        document.createElement("div");
+
+      reactionBox.className =
+        "reaction-counts";
+
+      const actions =
+        message.querySelector(".message-actions");
+
+      if (actions) {
+
+        actions.insertAdjacentElement(
+          "afterend",
+          reactionBox
+        );
+
+      } else {
+
+        message
+          .querySelector(".message-content")
+          ?.appendChild(reactionBox);
+
+      }
+
     }
-  }
 
-  const counts = data.reactions || {};
+    const counts =
+      data.reactions || {};
 
-  reactionBox.innerHTML = Object.entries(counts)
-    .filter(([reaction, count]) => Number(count) > 0)
-    .map(([reaction, count]) => {
-      return `
-        <span class="reaction-count">
-          ${escapeHTML(reaction)} ${Number(count)}
-        </span>
-      `;
-    })
-    .join("");
-});
+    reactionBox.innerHTML =
+      Object.entries(counts)
+        .filter(function ([reaction, count]) {
+          return Number(count) > 0;
+        })
+        .map(function ([reaction, count]) {
+
+          return `
+            <span class="reaction-count">
+              ${escapeHTML(reaction)} ${Number(count)}
+            </span>
+          `;
+
+        })
+        .join("");
+
+    // Remove empty reaction container
+    if (!reactionBox.innerHTML.trim()) {
+      reactionBox.remove();
+    }
+
+  });
 
 
   // --------------------------------------------------
@@ -664,25 +759,30 @@
 
     clearTimeout(typingTimeout);
 
-    typingTimeout = setTimeout(function () {
+    typingTimeout =
+      setTimeout(function () {
 
-      socket.emit("typing", {
-        typing: false
-      });
+        socket.emit("typing", {
+          typing: false
+        });
 
-    }, 1000);
+      }, 1000);
+
   }
 
 
   if (msgInput) {
 
-    msgInput.addEventListener("input", function () {
+    msgInput.addEventListener(
+      "input",
+      function () {
 
-      if (msgInput.value.trim()) {
-        sendTyping();
+        if (msgInput.value.trim()) {
+          sendTyping();
+        }
+
       }
-
-    });
+    );
 
   }
 
@@ -692,14 +792,20 @@
     if (!data) return;
 
     const username =
-      data.username || "";
+      data.username ||
+      data.user ||
+      "";
 
-    if (!username || username === MY_USERNAME) {
+    if (!username ||
+        username === MY_USERNAME) {
       return;
     }
 
     let indicator =
-      document.getElementById("typingIndicator");
+      document.getElementById(
+        "typingIndicator"
+      );
+
 
     if (!data.typing) {
 
@@ -742,82 +848,190 @@
 
   if (sendForm) {
 
-    sendForm.addEventListener("submit", function (event) {
+    sendForm.addEventListener(
+      "submit",
+      function (event) {
 
-      event.preventDefault();
+        event.preventDefault();
 
-      if (!msgInput || !socket.connected) {
-        return;
-      }
+        if (!msgInput ||
+            !socket.connected) {
+          return;
+        }
 
-      const text =
-        msgInput.value.trim();
+        const text =
+          msgInput.value.trim();
 
-      if (!text) return;
+        if (!text) return;
 
 
-      // Whisper shortcut:
-      // /w username message
-      if (text.startsWith("/w ")) {
+        // Whisper shortcut:
+        // /w username message
 
-        const parts =
-          text.substring(3).trim().split(/\s+/);
+        if (text.startsWith("/w ")) {
 
-        const target =
-          parts.shift();
+          const parts =
+            text
+              .substring(3)
+              .trim()
+              .split(/\s+/);
 
-        const privateText =
-          parts.join(" ").trim();
+          const target =
+            parts.shift();
 
-        if (target && privateText) {
+          const privateText =
+            parts.join(" ").trim();
+
+          if (target && privateText) {
+
+            socket.emit("pm", {
+              to: target,
+              text: privateText
+            });
+
+            msgInput.value = "";
+
+          }
+
+          return;
+        }
+
+
+        // Private message mode
+        if (privateTarget) {
 
           socket.emit("pm", {
-            to: target,
-            text: privateText
+            to: privateTarget,
+            text: text
           });
 
-          msgInput.value = "";
+        } else {
+
+          socket.emit("chat", {
+            text: text
+          });
 
         }
 
-        return;
-      }
+        msgInput.value = "";
 
-
-      // Private message mode
-      if (privateTarget) {
-
-        socket.emit("pm", {
-          to: privateTarget,
-          text: text
-        });
-
-      } else {
-
-        socket.emit("chat", {
-          text: text
-        });
+        msgInput.focus();
 
       }
-
-      msgInput.value = "";
-
-      msgInput.focus();
-
-    });
+    );
 
   }
 
 
-  // --------------------------------------------------
-  // Reconnect
-  // --------------------------------------------------
+  // ==================================================
+  // VIDEO CALLS
+  // ==================================================
 
-  socket.on("reconnect", function () {
+  async function getCameraAndMicrophone() {
 
-    socket.emit("roster_request");
+    if (!navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia) {
 
-  });
+      alert(
+        "Your browser does not support video calls."
+      );
+
+      return false;
+    }
+
+    try {
+
+      localStream =
+        await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+
+      if (localVideo) {
+        localVideo.srcObject = localStream;
+      }
+
+      return true;
+
+    } catch (error) {
+
+      console.error(
+        "Camera/microphone error:",
+        error
+      );
+
+      alert(
+        "Camera and microphone access is required for video calls."
+      );
+
+      return false;
+    }
+
+  }
 
 
-})();
+  function createPeerConnection() {
+
+    if (peerConnection) {
+      peerConnection.close();
+    }
+
+    peerConnection =
+      new RTCPeerConnection(rtcConfig);
+
+
+    // Send ICE candidates
+    peerConnection.onicecandidate =
+      function (event) {
+
+        if (!event.candidate) return;
+
+        if (!currentCallUser) return;
+
+        socket.emit("webrtc_signal", {
+
+          to: currentCallUser,
+
+          signal: {
+            type: "ice-candidate",
+            candidate: event.candidate
+          }
+
+        });
+
+      };
+
+
+    // Receive remote video
+    peerConnection.ontrack =
+      function (event) {
+
+        if (!remoteVideo) return;
+
+        if (event.streams &&
+            event.streams[0]) {
+
+          remoteVideo.srcObject =
+            event.streams[0];
+
+        }
+
+      };
+
+
+    peerConnection.onconnectionstatechange =
+      function () {
+
+        console.log(
+          "WebRTC connection:",
+          peerConnection.connectionState
+        );
+
+        if (
+          peerConnection.connectionState ===
+            "failed" ||
+          peerConnection.connectionState ===
+            "disconnected" ||
+          peerConnection.connectionState ===
+            "closed"
+        ) {
