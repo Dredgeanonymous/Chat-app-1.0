@@ -2258,3 +2258,28 @@ body.agelock {
   --text: #0f172a;
   --border: #e5e7eb;
 }
+
+
+.reaction-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.reaction-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  font-size: .8rem;
+  line-height: 1.2;
+}
+
+.theme-light .reaction-count {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
