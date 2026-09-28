@@ -379,20 +379,15 @@
       .forEach(function (button) {
 
         button.addEventListener("click", function () {
+  const reaction = button.dataset.reaction;
 
-          const reaction =
-            button.dataset.reaction;
+  if (!message.id) return;
 
-          if (!message.id) return;
-
-          socket.emit("react", {
-            id: message.id,
-            reaction: reaction
-          });
-
-        });
-
-      });
+  socket.emit("react", {
+    id: message.id,
+    reaction: reaction
+  });
+});
 
 
     const deleteButton =
