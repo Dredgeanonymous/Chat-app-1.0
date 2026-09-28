@@ -2604,3 +2604,235 @@ body.agelock {
     font-size: 1rem;
   }
 }
+
+/* ==========================================================================
+   ONLINE USER CARDS — FULL USERNAME + COMPACT BUTTONS
+   ========================================================================== */
+
+.chat-page .users {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.chat-page .users li.user-card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 9px;
+}
+
+/* ----------------------------------------------------------
+   USER INFORMATION
+   ---------------------------------------------------------- */
+
+.chat-page .user-card .chat-user-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+
+  overflow: hidden;
+}
+
+.chat-page .user-card .chat-user-info {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+
+  overflow: hidden;
+}
+
+/* Username gets all available space */
+.chat-page .user-card .chat-user-name,
+.chat-page .user-card .username,
+.chat-page .user-card .user-name {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  font-weight: 700;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status */
+.chat-page .user-card .chat-user-status {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  font-size: .72rem;
+}
+
+/* ----------------------------------------------------------
+   AVATAR
+   ---------------------------------------------------------- */
+
+.chat-page .user-card .chat-avatar {
+  width: 34px;
+  height: 34px;
+
+  flex: 0 0 34px;
+}
+
+/* ----------------------------------------------------------
+   ACTION BUTTONS
+   ---------------------------------------------------------- */
+
+.chat-page .user-card .user-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 3px;
+
+  flex: 0 0 auto;
+}
+
+/* Smaller buttons so they don't steal username space */
+.chat-page .user-card .user-video-btn,
+.chat-page .user-card .user-message-btn {
+  width: 30px;
+  height: 30px;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 7px;
+
+  font-size: .8rem;
+
+  flex: 0 0 30px;
+}
+
+/* Keep moderator badge from squeezing the username */
+.chat-page .user-card .mod-badge {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------------
+   CURRENT USER
+   ---------------------------------------------------------- */
+
+.chat-page .user-card.current-user {
+  min-width: 0;
+}
+
+/* ----------------------------------------------------------
+   TABLET
+   ---------------------------------------------------------- */
+
+@media (max-width: 900px) and (min-width: 601px) {
+
+  .chat-page .users {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chat-page .user-card .chat-user-name,
+  .chat-page .user-card .username,
+  .chat-page .user-card .user-name {
+    font-size: .9rem;
+  }
+}
+
+/* ----------------------------------------------------------
+   PHONE
+   ---------------------------------------------------------- */
+
+@media (max-width: 600px) {
+
+  .chat-page .users {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .chat-page .users li.user-card {
+    width: 100%;
+    padding: 8px 10px;
+  }
+
+  .chat-page .user-card .chat-avatar {
+    width: 36px;
+    height: 36px;
+
+    flex-basis: 36px;
+  }
+
+  .chat-page .user-card .chat-user-main {
+    gap: 9px;
+  }
+
+  .chat-page .user-card .chat-user-name,
+  .chat-page .user-card .username,
+  .chat-page .user-card .user-name {
+    font-size: .95rem;
+  }
+
+  .chat-page .user-card .user-video-btn,
+  .chat-page .user-card .user-message-btn {
+    width: 32px;
+    height: 32px;
+
+    flex-basis: 32px;
+
+    font-size: .8rem;
+  }
+}
+
+/* ----------------------------------------------------------
+   VERY SMALL PHONES
+   ---------------------------------------------------------- */
+
+@media (max-width: 360px) {
+
+  .chat-page .users li.user-card {
+    padding: 7px 8px;
+  }
+
+  .chat-page .user-card .chat-avatar {
+    width: 32px;
+    height: 32px;
+
+    flex-basis: 32px;
+  }
+
+  .chat-page .user-card .chat-user-name,
+  .chat-page .user-card .username,
+  .chat-page .user-card .user-name {
+    font-size: .9rem;
+  }
+
+  .chat-page .user-card .user-video-btn,
+  .chat-page .user-card .user-message-btn {
+    width: 28px;
+    height: 28px;
+
+    flex-basis: 28px;
+
+    font-size: .72rem;
+  }
+}
