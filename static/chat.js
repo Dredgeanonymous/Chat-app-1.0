@@ -175,6 +175,15 @@
   // --------------------------------------------------
   // Online users
   // --------------------------------------------------
+  function startVideoCall(username) {
+  if (!username) return;
+
+  console.log("Starting video call with:", username);
+
+  socket.emit("call_user", {
+    to: username
+  });
+}
 
   function renderUsers(roster) {
     if (!usersBox) return;
