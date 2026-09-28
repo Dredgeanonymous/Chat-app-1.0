@@ -2565,3 +2565,42 @@ body.agelock {
   }
 
 }
+
+/* Better online user cards */
+.users {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.user-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.user-card .username,
+.user-card .user-name {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* Mobile: give each person more room */
+@media (max-width: 600px) {
+  .users {
+    grid-template-columns: 1fr;
+  }
+
+  .user-card {
+    width: 100%;
+  }
+
+  .user-card .username,
+  .user-card .user-name {
+    white-space: nowrap;
+    font-size: 1rem;
+  }
+}
