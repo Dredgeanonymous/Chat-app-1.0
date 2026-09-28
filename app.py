@@ -313,15 +313,22 @@ def sio_roster_request():
     emit("online", build_roster())
 
 @socketio.on("typing")
-def sio_typing(data):
-    uname = session.get("username")
-    if not uname:
+def handle_typing(data):
+    info = online_by_sid.get(request.sid)
+
+    if not info:
         return
-    emit(
+
+    username = info.get("username", "")
+    is_typing = bool(data.get("typing")) if isinstance(data, dict) else False
+
+    socketio.emit(
         "typing",
-        {"user": uname, "typing": bool((data or {}).get("typing"))},
-        broadcast=True,
-        include_self=False,
+        {
+            "username": username,
+            "typing": is_typing
+        },
+        skip_sid=request.sid
     )
 
 @socketio.on("chat")
