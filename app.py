@@ -355,49 +355,40 @@ def sio_chat(data):
 
 
 @socketio.on("react")
-def sio_react(data):
-
-    uname = session.get("username")
-
-    if not uname:
+def handle_reaction(data):
+    if not isinstance(data, dict):
         return
 
+    message_id = str(data.get("id", "")).strip()
+    reaction = str(data.get("reaction", "")).strip()
 
-    mid = (data or {}).get("id")
-    emoji = (data or {}).get("emoji")
+    allowed_reactions = {"👍", "❤️", "😂"}
 
-
-    if not mid or not emoji:
+    if not message_id or reaction not in allowed_reactions:
         return
 
-
-    if mid not in reaction_store:
-        reaction_store[mid] = {}
-
-
-    if emoji not in reaction_store[mid]:
-        reaction_store[mid][emoji] = 0
-
-
-    reaction_store[mid][emoji] += 1
-
-
-    # Update message data
-    for msg in messages:
-        if msg["id"] == mid:
-            msg["reactions"] = reaction_store[mid]
-            break
-
-
-    emit(
-        "reaction_update",
-        {
-            "id": mid,
-            "reactions": reaction_store[mid]
-        },
-        broadcast=True
+    message = next(
+        (m for m in messages if str(m.get("id")) == message_id),
+        None
     )
 
+    if not message:
+        return
+
+    if "reactions" not in message:
+        message["reactions"] = {}
+
+    message["reactions"][reaction] = (
+        message["reactions"].get(reaction, 0) + 1
+    )
+
+    socketio.emit(
+        "reaction_update",
+        {
+            "id": message_id,
+            "reactions": message["reactions"]
+        }
+    )
 @socketio.on("pm")
 def sio_pm(data):
     uname = session.get("username")
