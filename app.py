@@ -375,44 +375,46 @@ def handle_reaction(data):
     if not message:
         return
 
-    # Track reactions made by each connected user.
-    if "reacted_by" not in message:
-        message["reacted_by"] = {}
+    # Keep reaction tracking OUTSIDE the message object.
+    # This prevents Python sets from being sent through Socket.IO.
+    if message_id not in reaction_store:
+        reaction_store[message_id] = {}
 
-    if request.sid not in message["reacted_by"]:
-        message["reacted_by"][request.sid] = set()
+    user_reactions = reaction_store[message_id]
 
-    user_reactions = message["reacted_by"][request.sid]
+    if request.sid not in user_reactions:
+        user_reactions[request.sid] = set()
 
-    # Initialize counts.
-    if "reactions" not in message:
-        message["reactions"] = {}
+    reactions_by_user = user_reactions[request.sid]
 
-    # Toggle reaction.
-    if reaction in user_reactions:
-        # Remove reaction
-        user_reactions.remove(reaction)
+    # Toggle reaction
+    if reaction in reactions_by_user:
 
-        current_count = message["reactions"].get(reaction, 0)
-
-        if current_count <= 1:
-            message["reactions"].pop(reaction, None)
-        else:
-            message["reactions"][reaction] = current_count - 1
+        reactions_by_user.remove(reaction)
 
     else:
-        # Add reaction
-        user_reactions.add(reaction)
 
-        message["reactions"][reaction] = (
-            message["reactions"].get(reaction, 0) + 1
-        )
+        reactions_by_user.add(reaction)
+
+    # Recalculate counts
+    counts = {}
+
+    for user_set in user_reactions.values():
+
+        for user_reaction in user_set:
+
+            counts[user_reaction] = (
+                counts.get(user_reaction, 0) + 1
+            )
+
+    # Store only JSON-safe reaction counts
+    message["reactions"] = counts
 
     socketio.emit(
         "reaction_update",
         {
             "id": message_id,
-            "reactions": message["reactions"]
+            "reactions": counts
         }
     )
 @socketio.on("pm")
